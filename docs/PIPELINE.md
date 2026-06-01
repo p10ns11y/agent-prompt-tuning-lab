@@ -21,13 +21,13 @@ flowchart LR
 Collect Cursor `agent-transcripts` from host and/or devcontainer into archives and optionally unpack.
 
 ```bash
-# Full extract: all ~/.cursor workspaces + subagents, Work/personal devcontainer projects
+# Full extract: all ~/.cursor workspaces + subagents; optional devcontainer pass
 pnpm harvest:all
 
 # Host only — every workspace under ~/.cursor/projects
 pnpm harvest:host -- --all --unpack
 
-# Work/personal devcontainer workspaces (slug contains Work-personal or workspaces-*)
+# Devcontainer harvest — workspaces matching slug (Work-personal, workspaces-*) or CURSOR_REPO_NAMES
 pnpm harvest:devcontainer -- --unpack
 
 # Filter by repo name fragment
@@ -129,7 +129,7 @@ Turn rows add `split` and `repo_hint`. See [SCHEMA.md](./SCHEMA.md).
 
 | Where | What works |
 |-------|------------|
-| **Host** (`~/Work/personal/agent-prompt-tuning-lab`) | Full `~/.cursor` harvest with `--all`; includes subagents and all Work/personal project slugs |
-| **Devcontainer** | Run `harvest:devcontainer` inside a container, or on host to copy Work/personal workspaces only |
+| **Host** | Full `~/.cursor` harvest with `--all`; includes subagents |
+| **Devcontainer** | Run `harvest:devcontainer` inside a container, or on host with slug/repo filter |
 
 Weekly habit on host: `pnpm harvest:all`

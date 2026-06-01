@@ -250,7 +250,7 @@ devcontainer_zip() {
       found=1
       mkdir -p "$tmp/$ws_id"
       cp -a "$dir/." "$tmp/$ws_id/"
-      echo "  + $ws_id (Work/personal)"
+      echo "  + $ws_id (Work-personal slug)"
     fi
   done
 
@@ -264,7 +264,7 @@ devcontainer_zip() {
   fi
 
   if [[ "$found" -eq 0 ]]; then
-    echo "skip: no Work/personal or filtered devcontainer workspaces under $DEV_PROJECTS"
+    echo "skip: no matching devcontainer workspaces (Work-personal slug or CURSOR_REPO_NAMES) under $DEV_PROJECTS"
     return 1
   fi
 

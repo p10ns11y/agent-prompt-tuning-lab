@@ -55,12 +55,12 @@ Repeated 3+ times in pool/eval?
 ## Install artifacts in a target repo
 
 ```bash
-# From agent-prompt-tuning-lab
-REPO=~/Work/personal/devprofile
-mkdir -p "$REPO/.cursor/rules" "$REPO/.cursor/skills"
+# From repo root (after cd /path/to/agent-prompt-tuning-lab)
+TARGET_REPO=/path/to/your-project
+mkdir -p "$TARGET_REPO/.cursor/rules" "$TARGET_REPO/.cursor/skills"
 
-cp docs/artifacts/devprofile/rules/*.mdc "$REPO/.cursor/rules/"
-cp -r docs/artifacts/devprofile/skills/* "$REPO/.cursor/skills/" 2>/dev/null || true
+cp docs/artifacts/devprofile/rules/*.mdc "$TARGET_REPO/.cursor/rules/"
+cp -r docs/artifacts/devprofile/skills/* "$TARGET_REPO/.cursor/skills/" 2>/dev/null || true
 ```
 
 Personal (all projects):

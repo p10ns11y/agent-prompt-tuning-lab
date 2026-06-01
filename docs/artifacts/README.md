@@ -5,12 +5,12 @@ Templates distilled from local gold/pool sessions (tool patterns and intents —
 ## Install
 
 ```bash
-LAB=~/Work/personal/agent-prompt-tuning-lab
-REPO=~/Work/personal/devprofile   # change per project
+LAB=/path/to/agent-prompt-tuning-lab
+TARGET_REPO=/path/to/your-project   # e.g. devprofile, premflow
 
-mkdir -p "$REPO/.cursor/rules" "$REPO/.cursor/skills"
-cp "$LAB/docs/artifacts/devprofile/rules/"*.mdc "$REPO/.cursor/rules/"
-cp -r "$LAB/docs/artifacts/devprofile/skills/"* "$REPO/.cursor/skills/" 2>/dev/null || true
+mkdir -p "$TARGET_REPO/.cursor/rules" "$TARGET_REPO/.cursor/skills"
+cp "$LAB/docs/artifacts/devprofile/rules/"*.mdc "$TARGET_REPO/.cursor/rules/"
+cp -r "$LAB/docs/artifacts/devprofile/skills/"* "$TARGET_REPO/.cursor/skills/" 2>/dev/null || true
 ```
 
 Personal (all repos):

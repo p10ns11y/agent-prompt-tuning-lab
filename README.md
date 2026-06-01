@@ -14,7 +14,8 @@ This repo is a **toolkit for contributors** building prompt-tuning datasets from
 ## Quick start
 
 ```bash
-cd ~/Work/personal/agent-prompt-tuning-lab
+git clone <your-fork-url> agent-prompt-tuning-lab   # or use your existing clone
+cd agent-prompt-tuning-lab
 chmod +x scripts/*.sh scripts/*.mjs
 
 pnpm harvest:all          # host + devcontainer unpack
@@ -54,7 +55,7 @@ pnpm tag-manifest -- --tag gold --repo devprofile --limit 5
 ## What `harvest:all` does
 
 1. **Host** — all `~/.cursor/projects/*/agent-transcripts` (`--all`), including `subagents/*.jsonl`.
-2. **Devcontainer** — Work/personal workspaces under `~/Work/personal`.
+2. **Devcontainer** — optional second pass; filters Cursor workspaces by slug (`Work-personal`, `workspaces-*`) or `CURSOR_REPO_NAMES` (see [PIPELINE.md](docs/PIPELINE.md)).
 
 ```text
 data/raw/host/<YYYYMMDD>/<workspace-slug>/<session-id>/…jsonl

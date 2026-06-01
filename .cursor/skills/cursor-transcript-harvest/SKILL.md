@@ -13,7 +13,7 @@ Run on the **host** where `~/.cursor/projects` exists (not inside a devcontainer
 ## Full harvest
 
 ```bash
-cd ~/Work/personal/agent-prompt-tuning-lab
+cd /path/to/agent-prompt-tuning-lab   # repo root
 pnpm harvest:all
 pnpm seed-manifest
 pnpm normalize

@@ -23,7 +23,7 @@ See [INSIGHTS.md](./INSIGHTS.md) for aggregate corpus statistics (counts only, n
 └───────────────────────────────┬─────────────────────────────┘
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Weekly (~5 min):  cd agent-prompt-tuning-lab                │
+│  Weekly (~5 min):  cd /path/to/agent-prompt-tuning-lab       │
 │                    pnpm harvest:all                          │
 │                    pnpm seed-manifest                        │
 │                    pnpm normalize                            │
@@ -57,7 +57,7 @@ Run harvest on the **host** where `~/.cursor/projects` exists. See [PIPELINE.md]
 
 | Step | Command | Notes |
 |------|---------|--------|
-| Pull new chats | `pnpm harvest:all` | Host + Work/personal devcontainer; includes subagents |
+| Pull new chats | `pnpm harvest:all` | Host `--all` + optional devcontainer pass (slug/repo filter) |
 | Index | `pnpm seed-manifest` | Usually runs after harvest |
 | Flatten | `pnpm normalize` | Default `--source host`; avoids duplicate sessions (see [INSIGHTS.md](./INSIGHTS.md)) |
 | Split | `pnpm split` | Session-level eval / pool / discard; gold tags → eval |
@@ -178,5 +178,5 @@ They contribute back: script fixes, aggregate INSIGHTS updates, gold **UUIDs** (
 
 ```bash
 pnpm insights -- --repo devprofile   # confirm tool patterns before copying artifacts
-cp docs/artifacts/devprofile/rules/*.mdc ~/Work/personal/devprofile/.cursor/rules/
+cp docs/artifacts/devprofile/rules/*.mdc /path/to/your-project/.cursor/rules/
 ```

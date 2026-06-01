@@ -10,9 +10,11 @@ One JSON object per session file (append-only catalog).
 |-------|------|-------------|
 | `schema_version` | number | Currently `1` |
 | `session_id` | string | UUID from filename or folder name |
+| `parent_session_id` | string? | Parent session folder when `raw_path` contains `…/<parent>/subagents/<id>.jsonl` |
 | `source` | string | `manual` \| `host` \| `devcontainer` |
-| `repo_hint` | string? | Matched repo name from `CURSOR_REPO_NAMES` |
+| `repo_hint` | string? | Repo name parsed from workspace slug (e.g. `devprofile` from `…Work-personal-devprofile`) |
 | `workspace_slug` | string? | Cursor project folder under `~/.cursor/projects` |
+| `harvest_date` | string? | UTC date folder from harvest (`YYYYMMDD`) |
 | `collected_at` | string | ISO-8601 UTC |
 | `raw_path` | string | Path relative to project root |
 | `bytes` | number | File size |
@@ -28,6 +30,7 @@ One object per user turn (after grouping assistant messages).
 |-------|------|-------------|
 | `schema_version` | number | `1` |
 | `session_id` | string | |
+| `parent_session_id` | string? | Set when normalized from a subagent JSONL file |
 | `turn_index` | number | 0-based per session |
 | `user_text` | string | Stripped `<user_query>` wrapper |
 | `assistant_text` | string | Last non-`[REDACTED]` assistant text before next user |

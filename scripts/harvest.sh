@@ -125,17 +125,10 @@ unpack_transcripts_dir() {
   mkdir -p "$dest_base"
   local count=0
   while IFS= read -r -d '' f; do
-    local rel session_dir session_id dest
+    local rel dest
     rel="${f#"$src_dir"/}"
-    session_dir="$(dirname "$rel")"
-    if [[ "$session_dir" == "." ]]; then
-      session_id="$(basename "$f" .jsonl)"
-      dest="$dest_base/$session_id.jsonl"
-    else
-      session_id="$(basename "$session_dir")"
-      mkdir -p "$dest_base/$session_id"
-      dest="$dest_base/$session_id/$(basename "$f")"
-    fi
+    dest="$dest_base/$rel"
+    mkdir -p "$(dirname "$dest")"
     cp -a "$f" "$dest"
     count=$((count + 1))
   done < <(find "$src_dir" -name '*.jsonl' -print0 2>/dev/null)
@@ -221,16 +214,75 @@ host_zip() {
   if $DO_UNPACK; then
     unpack_transcripts_dir "host" "$tmp"
   fi
+  trap - RETURN
+}
+
+work_personal_workspace_matches() {
+  local ws_id="$1"
+  [[ "$ws_id" == *"Work-personal"* ]] || [[ "$ws_id" == workspaces-* ]]
+}
+
+devcontainer_zip() {
+  local out="$BACKUP_DIR/agent-transcripts-devcontainer.zip"
+  local tmp
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+
+  if [[ ! -d "$DEV_PROJECTS" ]]; then
+    echo "error: devcontainer projects dir missing: $DEV_PROJECTS" >&2
+    return 1
+  fi
+
+  local found=0
+  local candidates=()
+  while IFS= read -r -d '' dir; do
+    candidates+=("$dir")
+  done < <(find "$DEV_PROJECTS" -mindepth 2 -maxdepth 2 -type d -name agent-transcripts -print0 2>/dev/null)
+
+  for dir in "${candidates[@]}"; do
+    ws_id="$(basename "$(dirname "$dir")")"
+    if repo_name_matches "$ws_id"; then
+      found=1
+      mkdir -p "$tmp/$ws_id"
+      cp -a "$dir/." "$tmp/$ws_id/"
+      echo "  + $ws_id (repo filter)"
+    elif work_personal_workspace_matches "$ws_id"; then
+      found=1
+      mkdir -p "$tmp/$ws_id"
+      cp -a "$dir/." "$tmp/$ws_id/"
+      echo "  + $ws_id (Work/personal)"
+    fi
+  done
+
+  if [[ "$found" -eq 0 ]] && [[ -d "$DEVCONTAINER_TRANSCRIPTS" ]]; then
+    echo "fallback: single devcontainer path $DEVCONTAINER_TRANSCRIPTS"
+    zip_tree "devcontainer" "$DEVCONTAINER_TRANSCRIPTS" "$out" || return $?
+    if $DO_UNPACK; then
+      unpack_transcripts_dir "devcontainer" "$DEVCONTAINER_TRANSCRIPTS"
+    fi
+    return 0
+  fi
+
+  if [[ "$found" -eq 0 ]]; then
+    echo "skip: no Work/personal or filtered devcontainer workspaces under $DEV_PROJECTS"
+    return 1
+  fi
+
+  if command -v zip >/dev/null 2>&1; then
+    (cd "$tmp" && zip -qr "$out" .)
+  else
+    node "$NODE_ZIP" "$tmp" "$out"
+  fi
+  ls -lh "$out"
+
+  if $DO_UNPACK; then
+    unpack_transcripts_dir "devcontainer" "$tmp"
+  fi
+  trap - RETURN
 }
 
 devcontainer_harvest() {
-  local out="$BACKUP_DIR/agent-transcripts-devcontainer.zip"
-  zip_tree "devcontainer" "$DEVCONTAINER_TRANSCRIPTS" "$out" || return $?
-  if $DO_UNPACK && [[ -d "$DEVCONTAINER_TRANSCRIPTS" ]]; then
-    unpack_transcripts_dir "devcontainer" "$DEVCONTAINER_TRANSCRIPTS"
-  elif $DO_UNPACK && [[ -f "$out" ]]; then
-    unpack_zip "devcontainer" "$out"
-  fi
+  devcontainer_zip
 }
 
 mkdir -p "$BACKUP_DIR" "$RAW_ROOT"

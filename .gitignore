@@ -13,5 +13,5 @@ data/processed/**
 data/splits/**
 !data/splits/.gitkeep
 
-# Manifest may list paths to raw data; keep structure, ignore if you prefer local-only catalog
-# data/manifest.jsonl
+# Local session catalog (paths to gitignored raw data)
+data/manifest.jsonl

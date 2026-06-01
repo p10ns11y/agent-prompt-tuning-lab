@@ -1,0 +1,15 @@
+---
+description: Normalize with --source host by default to avoid duplicate session turns
+globs: scripts/normalize.mjs
+alwaysApply: false
+---
+
+# Single-source normalize
+
+When running or editing `scripts/normalize.mjs`:
+
+- Default `pnpm normalize` uses `--source host`.
+- Use `--source all` only when you need cross-source coverage; dedup always runs per `session_id` (prefers host, workspace-scoped paths, newer mtime).
+- Prefer `host` over `all` on duplicated host+devcontainer trees to avoid scanning duplicate trees.
+
+Subagent files must pass through `parent_session_id` on each turn when `raw_path` contains `/subagents/`.

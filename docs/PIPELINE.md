@@ -21,15 +21,17 @@ flowchart LR
 Collect Cursor `agent-transcripts` from host and/or devcontainer into archives and optionally unpack.
 
 ```bash
-# Host (run on machine with ~/.cursor)
-pnpm harvest:host
-pnpm harvest:host -- --unpack
+# Full extract: all ~/.cursor workspaces + subagents, Work/personal devcontainer projects
+pnpm harvest:all
 
-# Devcontainer
+# Host only — every workspace under ~/.cursor/projects
+pnpm harvest:host -- --all --unpack
+
+# Work/personal devcontainer workspaces (slug contains Work-personal or workspaces-*)
 pnpm harvest:devcontainer -- --unpack
 
-# Both + unpack into data/raw/<source>/<date>/
-pnpm harvest:unpack
+# Filter by repo name fragment
+CURSOR_REPO_NAMES=devprofile,premflow pnpm harvest:host -- --unpack
 ```
 
 Environment:
@@ -43,17 +45,41 @@ Environment:
 
 Archives: `data/backups/agent-transcripts-{host,devcontainer}.zip`
 
-Unpack layout: `data/raw/{host,devcontainer,manual}/<session-id>/…jsonl` or flat `manual/<session-id>.jsonl`
+Unpack layout:
+
+```text
+data/raw/host/<YYYYMMDD>/<workspace-slug>/<session-id>/<session-id>.jsonl
+data/raw/host/<YYYYMMDD>/<workspace-slug>/<session-id>/subagents/<subagent-id>.jsonl
+data/raw/devcontainer/<YYYYMMDD>/<workspace-slug>/…
+data/raw/manual/<session-id>.jsonl
+```
 
 ## 2. Normalize (Phase 2)
 
 ```bash
-pnpm normalize
+pnpm normalize                    # default: --source host
+node scripts/normalize.mjs --source all   # dedup by session_id across sources
 ```
 
 Reads `data/raw/**/*.jsonl`, writes `data/processed/turns.jsonl` (see [SCHEMA.md](./SCHEMA.md)).
 
-Rules: strip skill bodies, group by user turn, path → `{REPO_ROOT}`, skip `[REDACTED]`-only assistant rows.
+| `--source` | Behavior |
+|------------|----------|
+| `host` (default) | Only `data/raw/host/**` — avoids host/devcontainer double-count |
+| `devcontainer` | Only `data/raw/devcontainer/**` |
+| `manual` | Only `data/raw/manual/**` |
+| `all` | All sources; one file per `session_id` (prefer host, workspace path, newest mtime) |
+
+Rules: strip skill bodies, group by user turn, path → `{REPO_ROOT}`, skip `[REDACTED]`-only assistant rows, set `parent_session_id` for subagent files.
+
+### Manifest tags
+
+```bash
+pnpm tag-manifest -- --tag gold --session-id <uuid>
+pnpm tag-manifest -- --tag gold --repo devprofile --limit 5
+```
+
+See [GOLD_SESSIONS.md](./GOLD_SESSIONS.md) for committable gold session ids.
 
 ## 3. Split (Phase 3 — planned)
 
@@ -63,7 +89,7 @@ Rules: strip skill bodies, group by user turn, path → `{REPO_ROOT}`, skip `[RE
 
 | Where | What works |
 |-------|------------|
-| **Host** | Full `~/.cursor` harvest; move this repo here after extracting from devprofile |
-| **Devcontainer** | Only in-container transcripts (`workspaces-<repo>` slug) |
+| **Host** (`~/Work/personal/agent-prompt-tuning-lab`) | Full `~/.cursor` harvest with `--all`; includes subagents and all Work/personal project slugs |
+| **Devcontainer** | Run `harvest:devcontainer` inside a container, or on host to copy Work/personal workspaces only |
 
-Weekly habit: `pnpm harvest:both -- --unpack` on host.
+Weekly habit on host: `pnpm harvest:all`

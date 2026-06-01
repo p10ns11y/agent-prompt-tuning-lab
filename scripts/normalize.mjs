@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Phase 2: Normalize Cursor agent JSONL → data/processed/turns.jsonl
- * Usage: node scripts/normalize.mjs [--force]
+ * Usage: node scripts/normalize.mjs [--source host|devcontainer|manual|all] [--force]
  */
 import { createReadStream, createWriteStream } from "node:fs";
 import { readFile, readdir, stat, writeFile } from "node:fs/promises";
@@ -15,10 +15,28 @@ const RAW_ROOT = path.join(PROJECT_ROOT, "data", "raw");
 const OUT_DIR = path.join(PROJECT_ROOT, "data", "processed");
 const SCHEMA_VERSION = 1;
 
+const SOURCE_RANK = { host: 3, manual: 2, devcontainer: 1, unknown: 0 };
+
 const REPO_ROOT_PATTERNS = [
   /\/workspaces\/[^/]+/g,
   /\/home\/[^/]+\/[^/]+\/[^/]+\/devprofile/g,
 ];
+
+function parseArgs(argv) {
+  let source = "host";
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--source" && argv[i + 1]) source = argv[++i];
+    else if (argv[i] === "--help" || argv[i] === "-h") {
+      console.log("Usage: node scripts/normalize.mjs [--source host|devcontainer|manual|all]");
+      process.exit(0);
+    }
+  }
+  if (!["host", "devcontainer", "manual", "all"].includes(source)) {
+    console.error(`error: invalid --source ${source}`);
+    process.exit(1);
+  }
+  return { source };
+}
 
 function stripUserQuery(text) {
   const m = text.match(/<user_query>\s*([\s\S]*?)\s*<\/user_query>/i);
@@ -60,6 +78,39 @@ function isRedactedOnly(text) {
   return !t || t === "[REDACTED]" || /^(\[REDACTED\]\s*)+$/.test(t);
 }
 
+function parseFileMeta(filePath) {
+  const rel = path.relative(PROJECT_ROOT, filePath).split(path.sep).join("/");
+  const parts = rel.split("/");
+  const source =
+    parts[2] === "manual"
+      ? "manual"
+      : parts[2] === "host"
+        ? "host"
+        : parts[2] === "devcontainer"
+          ? "devcontainer"
+          : "unknown";
+  const sessionId = path.basename(filePath, ".jsonl");
+  const subIdx = parts.indexOf("subagents");
+  let parentSessionId = null;
+  if (subIdx > 0) {
+    parentSessionId = parts[subIdx - 1];
+    if (parentSessionId === "subagents" || parentSessionId.length < 36) {
+      parentSessionId = null;
+    }
+  }
+  return { rel, source, sessionId, parentSessionId };
+}
+
+function filePickScore(meta, mtimeMs) {
+  let s = 0;
+  if (meta.rel.includes("Work-personal")) s += 100;
+  if (meta.rel.match(/\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.jsonl$/)) s += 50;
+  if (!meta.rel.includes("/subagents/")) s += 30;
+  s += (SOURCE_RANK[meta.source] ?? 0) * 20;
+  s += (mtimeMs ?? 0) / 1e12;
+  return s;
+}
+
 async function readJsonl(filePath) {
   const rows = [];
   const rl = createInterface({
@@ -77,7 +128,7 @@ async function readJsonl(filePath) {
   return rows;
 }
 
-function turnsFromSession(sessionId, rows) {
+function turnsFromSession(sessionId, rows, parentSessionId = null) {
   const turns = [];
   let turnIndex = 0;
   let pendingUser = null;
@@ -98,7 +149,7 @@ function turnsFromSession(sessionId, rows) {
 
   const pushTurn = (userText, assistantText, meta) => {
     if (!userText && !assistantText) return;
-    turns.push({
+    const turn = {
       schema_version: SCHEMA_VERSION,
       session_id: sessionId,
       turn_index: turnIndex++,
@@ -109,7 +160,9 @@ function turnsFromSession(sessionId, rows) {
       tool_call_count: meta.toolCallCount,
       had_attached_skills: meta.skillNames.length > 0,
       discarded_reason: meta.discardedReason ?? null,
-    });
+    };
+    if (parentSessionId) turn.parent_session_id = parentSessionId;
+    turns.push(turn);
   };
 
   for (const row of rows) {
@@ -150,25 +203,47 @@ function turnsFromSession(sessionId, rows) {
   return turns;
 }
 
-async function collectJsonlFiles(dir, base = dir) {
+async function collectJsonlFiles(dir, sourceFilter) {
   const out = [];
   const entries = await readdir(dir, { withFileTypes: true });
   for (const ent of entries) {
     const full = path.join(dir, ent.name);
     if (ent.isDirectory()) {
-      out.push(...(await collectJsonlFiles(full, base)));
+      out.push(...(await collectJsonlFiles(full, sourceFilter)));
     } else if (ent.isFile() && ent.name.endsWith(".jsonl")) {
-      out.push(full);
+      const meta = parseFileMeta(full);
+      if (sourceFilter !== "all" && meta.source !== sourceFilter) continue;
+      const st = await stat(full);
+      out.push({ full, meta, mtimeMs: st.mtimeMs });
     }
   }
   return out;
 }
 
+function dedupeFiles(files) {
+  const bySession = new Map();
+  for (const item of files) {
+    const id = item.meta.sessionId;
+    const prev = bySession.get(id);
+    if (!prev || filePickScore(item.meta, item.mtimeMs) > filePickScore(prev.meta, prev.mtimeMs)) {
+      bySession.set(id, item);
+    }
+  }
+  return [...bySession.values()];
+}
+
 async function main() {
-  const files = await collectJsonlFiles(RAW_ROOT);
-  if (files.length === 0) {
-    console.error("No JSONL under data/raw — run harvest --unpack or add manual files");
+  const { source } = parseArgs(process.argv.slice(2));
+  const allFiles = await collectJsonlFiles(RAW_ROOT, source);
+  if (allFiles.length === 0) {
+    console.error(`No JSONL under data/raw for --source ${source}`);
     process.exit(1);
+  }
+
+  const files = dedupeFiles(allFiles);
+  const skipped = allFiles.length - files.length;
+  if (skipped > 0) {
+    console.log(`dedup: ${skipped} duplicate session file(s) skipped (--source ${source})`);
   }
 
   await writeFile(path.join(OUT_DIR, "turns.jsonl"), "");
@@ -180,10 +255,9 @@ async function main() {
   let totalTurns = 0;
   let totalDropped = 0;
 
-  for (const file of files) {
-    const sessionId = path.basename(file, ".jsonl");
-    const rows = await readJsonl(file);
-    const turns = turnsFromSession(sessionId, rows);
+  for (const { full, meta } of files) {
+    const rows = await readJsonl(full);
+    const turns = turnsFromSession(meta.sessionId, rows, meta.parentSessionId);
     for (const t of turns) {
       if (!t.assistant_text && !t.user_text) continue;
       if (!t.assistant_text && t.discarded_reason) {
@@ -194,7 +268,8 @@ async function main() {
       turnsStream.write(`${JSON.stringify(t)}\n`);
       totalTurns++;
     }
-    console.log(`${path.relative(PROJECT_ROOT, file)} → ${turns.length} turns`);
+    const parentNote = meta.parentSessionId ? ` parent=${meta.parentSessionId}` : "";
+    console.log(`${meta.rel} → ${turns.length} turns${parentNote}`);
   }
 
   await new Promise((r) => {
@@ -204,7 +279,9 @@ async function main() {
     droppedStream.end(r);
   });
 
-  console.log(`Wrote data/processed/turns.jsonl (${totalTurns} turns, ${totalDropped} dropped)`);
+  console.log(
+    `Wrote data/processed/turns.jsonl (${totalTurns} turns, ${totalDropped} dropped, --source ${source}, ${files.length} files)`,
+  );
 }
 
 main().catch((err) => {

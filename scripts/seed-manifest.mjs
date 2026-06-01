@@ -72,11 +72,38 @@ async function countLines(filePath) {
   return n;
 }
 
-function inferRepoHint(rel, workspaceSlug) {
-  if (workspaceSlug?.includes("devprofile")) return "devprofile";
-  const m = workspaceSlug?.match(/workspaces-(.+)/);
-  if (m) return m[1];
+function parseRawPath(rel) {
+  const parts = rel.split("/");
+  if (parts[0] !== "data" || parts[1] !== "raw") return {};
+  const source = parts[2];
+  if (source === "manual") return { source };
+  if (parts.length >= 5) {
+    return {
+      source,
+      harvestDate: parts[3],
+      workspaceSlug: parts[4],
+    };
+  }
+  return { source };
+}
+
+function inferRepoHint(workspaceSlug) {
+  if (!workspaceSlug) return undefined;
+  const personal = workspaceSlug.match(/Work-personal-(.+)$/);
+  if (personal) return personal[1];
+  const workspace = workspaceSlug.match(/^workspaces-(.+)$/);
+  if (workspace) return workspace[1];
+  if (workspaceSlug.includes("devprofile")) return "devprofile";
   return undefined;
+}
+
+function parentSessionIdFromPath(rel) {
+  const parts = rel.split("/");
+  const subIdx = parts.indexOf("subagents");
+  if (subIdx <= 0) return undefined;
+  const parent = parts[subIdx - 1];
+  if (parent === "subagents" || !/^[a-f0-9-]{36}$/i.test(parent)) return undefined;
+  return parent;
 }
 
 async function main() {
@@ -90,16 +117,16 @@ async function main() {
     if (existing.has(key)) continue;
 
     const lineCount = await countLines(full);
-    const workspaceSlug =
-      rel.includes("/") && source !== "manual"
-        ? rel.split("/")[3]
-        : undefined;
+    const { workspaceSlug, harvestDate } = parseRawPath(rel);
+
+    const parentSessionId = parentSessionIdFromPath(rel);
 
     const row = {
       schema_version: SCHEMA_VERSION,
       session_id: sessionId,
       source,
-      repo_hint: inferRepoHint(rel, workspaceSlug),
+      repo_hint: inferRepoHint(workspaceSlug),
+      harvest_date: harvestDate,
       workspace_slug: workspaceSlug,
       collected_at: new Date().toISOString(),
       raw_path: rel,
@@ -108,6 +135,7 @@ async function main() {
       mtime_ms: st.mtimeMs,
       tags: [],
     };
+    if (parentSessionId) row.parent_session_id = parentSessionId;
 
     await appendFile(MANIFEST_PATH, `${JSON.stringify(row)}\n`);
     existing.add(key);

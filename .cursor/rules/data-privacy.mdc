@@ -1,0 +1,18 @@
+---
+description: Keep transcript data and local manifest out of git commits
+alwaysApply: true
+---
+
+# Data privacy
+
+Never commit sensitive or large session data from this lab:
+
+- `data/raw/**` (including `data/raw/manual/*.jsonl`)
+- `data/processed/**`
+- `data/backups/*.zip`
+- `data/manifest.jsonl`
+- `data/splits/**`
+
+Safe to commit: scripts, `docs/`, `.cursor/`, and reference lists like `docs/GOLD_SESSIONS.md` (session UUIDs and repo hints only — no transcript text).
+
+Before suggesting a git add, check paths against `.gitignore`. Do not paste transcript content into committed markdown.

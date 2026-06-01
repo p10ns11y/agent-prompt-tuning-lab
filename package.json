@@ -1,5 +1,5 @@
 {
-  "name": "agent-prompt-lab",
+  "name": "agent-prompt-tuning-lab",
   "version": "0.1.0",
   "private": true,
   "description": "Harvest, normalize, and split Cursor agent transcripts for prompt tuning",
@@ -9,8 +9,10 @@
     "harvest:host": "./scripts/harvest.sh host",
     "harvest:devcontainer": "./scripts/harvest.sh devcontainer",
     "harvest:both": "./scripts/harvest.sh both",
+    "harvest:all": "./scripts/harvest.sh host --all --unpack && ./scripts/harvest.sh devcontainer --unpack",
     "harvest:unpack": "./scripts/harvest.sh both --unpack",
-    "normalize": "node scripts/normalize.mjs",
-    "seed-manifest": "node scripts/seed-manifest.mjs"
+    "normalize": "node scripts/normalize.mjs --source host",
+    "seed-manifest": "node scripts/seed-manifest.mjs",
+    "tag-manifest": "node scripts/tag-manifest.mjs"
   }
 }

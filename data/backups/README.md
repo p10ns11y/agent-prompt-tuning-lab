@@ -10,8 +10,10 @@ Optional zip snapshots from `pnpm harvest:*` (not required if you use `--unpack`
 Regenerate:
 
 ```bash
-pnpm harvest:host
-pnpm harvest:devcontainer
+pnpm harvest:all
+# or
+pnpm harvest:host -- --all --unpack
+pnpm harvest:devcontainer -- --unpack
 ```
 
 See [../README.md](../README.md) and [../docs/PIPELINE.md](../docs/PIPELINE.md).

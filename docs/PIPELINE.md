@@ -81,9 +81,49 @@ pnpm tag-manifest -- --tag gold --repo devprofile --limit 5
 
 See [GOLD_SESSIONS.md](./GOLD_SESSIONS.md) for committable gold session ids.
 
-## 3. Split (Phase 3 — planned)
+## 3. Split (Phase 3)
 
-`scripts/split.mjs`: train / eval / discard by session_id and heuristics; export OpenAI-messages and prompt-completion JSONL.
+Session-level split for prompt tuning, eval, and pattern mining — **not** OpenAI fine-tuning export.
+
+```bash
+pnpm split
+node scripts/split.mjs --eval-tag gold --seed 42 --eval-ratio 0.2
+```
+
+Reads `data/processed/turns.jsonl` (required). Optionally enriches from `data/manifest.jsonl` (`tags`, `repo_hint`, `parent_session_id`).
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `--eval-tag` | `gold` | Manifest tag that always routes sessions to `eval/` |
+| `--seed` | `42` | Deterministic shuffle for pool vs eval assignment |
+| `--eval-ratio` | `0.2` | Fraction of non-tagged, non-discarded sessions assigned to eval |
+
+### Logic (session-level, no turn leakage)
+
+1. Group turns by `session_id`.
+2. Build session metadata: turn count, tool calls, skills, repo hint, tags, subagent link.
+3. **Tagged eval** — sessions with manifest tag `gold` (or `--eval-tag`) → always `eval/`.
+4. **Family grouping** — parent and subagent children stay in the same bucket (eval or pool).
+5. **Discard** low-signal sessions:
+   - no turns with assistant text
+   - single turn, zero tool calls, user text under 50 chars
+   - all assistant text is `[REDACTED]` only (no substantive text after stripping)
+6. **Pool split** — remaining sessions: seeded shuffle, `--eval-ratio` to `eval/`, rest to `pool/`.
+
+### Outputs
+
+```text
+data/splits/
+  eval/turns.jsonl       # held-out exemplars + random eval sessions
+  pool/turns.jsonl       # pattern-mining / non-held-out
+  discard/turns.jsonl    # low-signal sessions
+  sessions.jsonl         # one row per session (split, metadata)
+  summary.json           # counts by split, repo, kind — no transcript text
+```
+
+Turn rows add `split` and `repo_hint`. See [SCHEMA.md](./SCHEMA.md).
+
+**Note:** Cursor exports do not record Composer vs auto model selection. Splits are by session, tags, and repo — not by model.
 
 ## Host vs devcontainer
 

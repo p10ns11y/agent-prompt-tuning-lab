@@ -47,3 +47,36 @@ Optional; tool-use summary per turn (Phase 2).
 ## processed/dropped.jsonl
 
 Audit log for REDACTED-only, empty, or meta threads.
+
+## splits/ (Phase 3)
+
+Written by `pnpm split`. All paths under `data/splits/` are gitignored except `.gitkeep`.
+
+### splits/eval|pool|discard/turns.jsonl
+
+Same fields as `processed/turns.jsonl`, plus:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `split` | string | `eval` \| `pool` \| `discard` |
+| `repo_hint` | string? | From manifest when available |
+
+### splits/sessions.jsonl
+
+One row per session after split assignment.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | `session_id` |
+| `split` | string | `eval` \| `pool` \| `discard` |
+| `repo_hint` | string? | |
+| `tags` | string[] | From manifest |
+| `turn_count` | number | |
+| `tool_calls` | number | Sum of `tool_call_count` across turns |
+| `kind` | string | `parent` \| `subagent` |
+| `parent_session_id` | string? | |
+| `discard_reason` | string? | Present when `split` is `discard` |
+
+### splits/summary.json
+
+Aggregate counts only (no transcript text): sessions and turns by split, breakdown by `repo_hint` and `kind`, plus run config (`eval_tag`, `seed`, `eval_ratio`).

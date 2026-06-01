@@ -9,7 +9,7 @@ This repo is a **toolkit for contributors** building prompt-tuning datasets from
 - Collect agent JSONL from `~/.cursor/projects/*/agent-transcripts`
 - Catalog sessions in a local manifest (paths, repo hints, tags)
 - Normalize to flat `turns.jsonl` with tool/skill metadata
-- Tag gold exemplars for eval and few-shot pools (Phase 3: train/eval split)
+- Tag gold exemplars for eval and few-shot pools (`pnpm split`)
 
 ## Quick start
 
@@ -20,6 +20,7 @@ chmod +x scripts/*.sh scripts/*.mjs
 pnpm harvest:all          # host + devcontainer unpack
 pnpm seed-manifest        # index data/raw → manifest
 pnpm normalize            # default --source host (dedup-safe)
+pnpm split                # eval / pool / discard by session
 ```
 
 See [WORKFLOW.md](docs/WORKFLOW.md) for weekly cadence and applying lessons to other repos.
@@ -31,7 +32,7 @@ See [PIPELINE.md](docs/PIPELINE.md) for selective harvest and env vars.
 |-----------|-------------------------|
 | `scripts/`, `docs/`, `.cursor/` | `data/raw/**` (transcripts) |
 | `docs/GOLD_SESSIONS.md` (ids only) | `data/manifest.jsonl` |
-| `docs/INSIGHTS.md` (aggregate stats) | `data/processed/**`, `data/backups/*.zip` |
+| `docs/INSIGHTS.md` (aggregate stats) | `data/processed/**`, `data/splits/**`, `data/backups/*.zip` |
 
 - Never commit raw JSONL, processed turns, or zip backups.
 - `data/manifest.jsonl` lists paths to your machine — keep it local.
@@ -77,6 +78,7 @@ pnpm harvest:devcontainer -- --unpack
 agent-prompt-tuning-lab/
   scripts/harvest.sh
   scripts/normalize.mjs       # --source host|devcontainer|manual|all
+  scripts/split.mjs           # eval / pool / discard by session
   scripts/seed-manifest.mjs
   scripts/tag-manifest.mjs
   .cursor/skills/             # harvest workflow skill
@@ -102,9 +104,9 @@ agent-prompt-tuning-lab/
 |-------|--------|
 | 1 Harvest + manifest | Done |
 | 2 Normalize turns | Done (`pnpm normalize`) |
-| 3 Split + export | Planned — `scripts/split.mjs`, train/eval by `session_id` and `tags` |
+| 3 Split | Done (`pnpm split`) — eval / pool / discard by session, tags, and repo |
 
-Phase 3 will consume `turns.jsonl`, respect `gold` tags, and emit OpenAI-messages / prompt-completion JSONL under `data/splits/`.
+Phase 3 consumes `turns.jsonl`, respects `gold` tags, and writes prompt-tuning splits under `data/splits/` (eval exemplars, pattern-mining pool, discard audit). Cursor exports do not include Composer vs auto model — split is by session/tags/repo, not model.
 
 ## Contributing
 

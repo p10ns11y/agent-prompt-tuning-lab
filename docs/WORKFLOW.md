@@ -8,7 +8,7 @@ Cursor already logs how you work — tools, skills, subagents, failures. Without
 
 - See patterns (dominant tools, when skills help, what gets dropped)
 - Pick **gold sessions** as few-shot or eval examples
-- Export clean training data (Phase 3)
+- Export clean eval and pattern-mining splits (`pnpm split`)
 - **Port lessons** into `.cursor/rules` and skills in other repos
 
 The value is **closing the loop**: real sessions → structured turns → tagged exemplars → better prompts elsewhere.
@@ -27,6 +27,7 @@ See [INSIGHTS.md](./INSIGHTS.md) for aggregate corpus statistics (counts only, n
 │                    pnpm harvest:all                          │
 │                    pnpm seed-manifest                        │
 │                    pnpm normalize                            │
+│                    pnpm split                                │
 └───────────────────────────────┬─────────────────────────────┘
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
@@ -59,7 +60,8 @@ Run harvest on the **host** where `~/.cursor/projects` exists. See [PIPELINE.md]
 | Pull new chats | `pnpm harvest:all` | Host + Work/personal devcontainer; includes subagents |
 | Index | `pnpm seed-manifest` | Usually runs after harvest |
 | Flatten | `pnpm normalize` | Default `--source host`; avoids duplicate sessions (see [INSIGHTS.md](./INSIGHTS.md)) |
-| Tag winners | `pnpm tag-manifest -- --tag gold --session-id <uuid>` | Or `--repo <name> --limit 3` |
+| Split | `pnpm split` | Session-level eval / pool / discard; gold tags → eval |
+| Tag winners | `pnpm tag-manifest -- --tag gold --session-id <uuid>` | Or `--repo <name> --limit 3`; re-run `pnpm split` after tagging |
 
 Full pipeline details: [PIPELINE.md](./PIPELINE.md). Harvest skill: `.cursor/skills/cursor-transcript-harvest/`.
 
@@ -67,11 +69,11 @@ Full pipeline details: [PIPELINE.md](./PIPELINE.md). Harvest skill: `.cursor/ski
 
 | Cadence | Action |
 |---------|--------|
-| **Weekly** | `harvest:all` → `seed-manifest` → `normalize` |
+| **Weekly** | `harvest:all` → `seed-manifest` → `normalize` → `split` |
 | **After a great session** | Tag it gold immediately |
 | **After a bad session** | Note session id; optional `tags: ["anti-pattern"]` later |
 | **Monthly** | Refresh [INSIGHTS.md](./INSIGHTS.md) if corpus shape changed materially |
-| **Before Phase 3** | Curate gold set; do not export everything |
+| **Before eval work** | Curate gold set; re-run `pnpm split` after tagging |
 
 ## Value outputs
 
@@ -81,13 +83,14 @@ Full pipeline details: [PIPELINE.md](./PIPELINE.md). Harvest skill: `.cursor/ski
 | `data/processed/turns.jsonl` | One row per user turn: query, reply, tools, skills |
 | [INSIGHTS.md](./INSIGHTS.md) | Corpus stats without leaking chat text |
 | [GOLD_SESSIONS.md](./GOLD_SESSIONS.md) | Committable list of exemplar session ids |
+| `data/splits/` | Eval, pool, and discard turn files plus `sessions.jsonl` / `summary.json` |
 | `.cursor/skills` + `.cursor/rules` | Harvest workflow + privacy guardrails in-repo |
 
 **What the corpus suggests** (details in [INSIGHTS.md](./INSIGHTS.md)):
 
 - Tool use dominates → agents are **implementers**; rules should emphasize read → edit → verify.
 - Skills attach rarely but correlate with deeper tool use when present → improve **routing** (when to attach a skill), not more skill bodies.
-- Most assistant text is `[REDACTED]` → fine for metadata; **not** for training until Phase 3 strips or drops them.
+- Most assistant text is `[REDACTED]` → fine for metadata; low-signal sessions land in `data/splits/discard/`.
 - Subagent files exist → delegation patterns are learnable via `parent_session_id`.
 
 ## Applying lessons (three layers)
@@ -116,13 +119,14 @@ Multi-step playbooks, not style guides. Add to a project when local turns show h
 | Domain workflow (e.g. UI fusion, large refactors) | Repeated multi-tool success on that task class |
 | Harvest / lab skills | Only in this repo |
 
-### Layer 3: Few-shot / eval (Phase 3)
+### Layer 3: Few-shot / eval
 
-Gold sessions become:
+Gold and eval-split sessions (`data/splits/eval/`) become:
 
 - **Eval set** — e.g. "given this user query, did the agent verify before claiming done?"
 - **Few-shot** — 2–3 anonymized turn pairs in a router prompt
-- **Fine-tuning** — only after redaction strip + secret scan
+
+Use `data/splits/pool/` for pattern mining across non-held-out sessions. Cursor exports do not distinguish Composer vs auto model — filter by repo/tags, not model.
 
 ## Lesson extraction steps
 
@@ -155,11 +159,11 @@ They contribute back: script fixes, aggregate INSIGHTS updates, gold **UUIDs** (
 
 ## Pitfalls
 
-- Do not commit `data/raw`, `data/processed`, `data/backups/*.zip`, or `data/manifest.jsonl`.
+- Do not commit `data/raw`, `data/processed`, `data/splits`, `data/backups/*.zip`, or `data/manifest.jsonl`.
 - Do not normalize with `--source all` unless you understand dedup — default `host` is correct for most hosts.
-- Do not distill rules from the full corpus — use **gold** sessions only ([GOLD_SESSIONS.md](./GOLD_SESSIONS.md)).
+- Do not distill rules from the full corpus — use **gold** / **eval** sessions ([GOLD_SESSIONS.md](./GOLD_SESSIONS.md), `data/splits/eval/`).
 - Do not paste transcript text into other repos — distill **procedure and constraints**.
-- Do not use raw harvest for training exports until Phase 3 handles redaction and secret scanning.
+- Do not use raw harvest for eval exports — run `pnpm split` and scan for secrets before sharing turn excerpts.
 
 ## Summary
 
@@ -167,7 +171,7 @@ They contribute back: script fixes, aggregate INSIGHTS updates, gold **UUIDs** (
 |----------|--------|
 | **Why?** | Turn Cursor history into reusable prompt improvements |
 | **How often?** | Harvest weekly; tag gold ad hoc; port rules monthly |
-| **Value?** | Measurable patterns + tagged exemplars + export path (Phase 3) |
+| **Value?** | Measurable patterns + tagged exemplars + eval/pool splits |
 | **Apply elsewhere?** | Rules/skills in target repos; transcripts stay local |
 
 **Next step:** pick one gold session, read its turns locally, write **one rule** in a target dev repo, and use it on the next similar task. That is the loop this repo is built for.

@@ -12,6 +12,7 @@
     "harvest:all": "./scripts/harvest.sh host --all --unpack && ./scripts/harvest.sh devcontainer --unpack",
     "harvest:unpack": "./scripts/harvest.sh both --unpack",
     "normalize": "node scripts/normalize.mjs --source host",
+    "split": "node scripts/split.mjs",
     "seed-manifest": "node scripts/seed-manifest.mjs",
     "tag-manifest": "node scripts/tag-manifest.mjs"
   }

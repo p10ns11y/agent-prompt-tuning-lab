@@ -125,6 +125,58 @@ Turn rows add `split` and `repo_hint`. See [SCHEMA.md](./SCHEMA.md).
 
 **Note:** Cursor exports do not record Composer vs auto model selection. Splits are by session, tags, and repo — not by model.
 
+## 4. Suggest artifacts (Phase 4)
+
+LLM-assisted drafting from split stats and sanitized exemplars — **no full transcripts in prompts or git**.
+
+### Recommended providers
+
+| Provider | When | Command / env |
+|----------|------|----------------|
+| **Grok** (best API) | Fast, cheap, JSON mode | `XAI_API_KEY` + `--llm grok` (`grok-build-0.1`) |
+| **Cursor IDE** | Paste prompt, no API script | `--llm prompt` → open `PROMPT.md` in Agent/Composer chat |
+| **Cursor SDK** | Automate from CI/script | `CURSOR_API_KEY` + `npm install @cursor/sdk` + `--llm cursor` |
+| Local Ollama | Opt-in only (slow here) | `--llm ollama` |
+
+`--llm auto` tries **Grok → Cursor SDK → prompt-only**. Local Ollama is excluded from auto.
+
+```bash
+pnpm suggest-artifacts -- --bundle devprofile              # auto: Grok → Cursor → prompt
+pnpm suggest-artifacts -- --bundle devprofile --llm grok   # xAI grok-build-0.1
+pnpm suggest-artifacts -- --bundle devprofile --llm cursor # Cursor SDK (cloud default)
+pnpm suggest-artifacts -- --bundle devprofile --split pool
+pnpm suggest-artifacts -- --bundle devprofile --apply      # copy new drafts → docs/artifacts/
+```
+
+Cursor SDK (cloud — default):
+
+```bash
+export CURSOR_API_KEY=...
+export CURSOR_CLOUD_REPO=https://github.com/you/agent-prompt-tuning-lab.git
+pnpm suggest-artifacts -- --bundle devprofile --llm cursor
+```
+
+Manual IDE path (no API key):
+
+```bash
+pnpm suggest-artifacts -- --bundle devprofile --llm prompt
+# Paste PROMPT.md into Cursor Agent chat; save JSON as response.json
+pnpm suggest-artifacts -- --bundle devprofile --ingest data/artifact-drafts/devprofile/<ts>/response.json --apply
+```
+
+Outputs (gitignored): `data/artifact-drafts/<bundle>/<timestamp>/`
+
+| File | Purpose |
+|------|---------|
+| `context.json` | Stats, gold ids, exemplar summaries, existing artifact index |
+| `PROMPT.md` | Copy-paste prompt for external LLM |
+| `response.json` | Raw LLM JSON |
+| `rules/*.mdc`, `skills/*/SKILL.md` | Formatted drafts for review |
+
+Env: `XAI_API_KEY`, `XAI_MODEL` (default `grok-build-0.1`); `CURSOR_API_KEY`, `CURSOR_MODEL`, `CURSOR_RUNTIME`, `CURSOR_CLOUD_REPO`. Local Ollama: opt-in via `--llm ollama` only.
+
+Review before commit — `--apply` never overwrites existing files in `docs/artifacts/`.
+
 ## Host vs devcontainer
 
 | Where | What works |

@@ -16,6 +16,10 @@
     "insights": "node scripts/insights.mjs",
     "seed-manifest": "node scripts/seed-manifest.mjs",
     "tag-manifest": "node scripts/tag-manifest.mjs",
-    "install-artifacts": "node scripts/install-artifacts.mjs"
+    "install-artifacts": "node scripts/install-artifacts.mjs",
+    "suggest-artifacts": "node scripts/suggest-artifacts.mjs"
+  },
+  "optionalDependencies": {
+    "@cursor/sdk": "^0.1.0"
   }
 }

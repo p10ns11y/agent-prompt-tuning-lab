@@ -23,6 +23,7 @@ pnpm seed-manifest        # index data/raw → manifest
 pnpm normalize            # default --source host (dedup-safe)
 pnpm split                # eval / pool / discard by session
 pnpm insights             # tool patterns from splits (no transcript text)
+pnpm suggest-artifacts -- --bundle devprofile   # Phase 4: LLM draft rules/skills (review locally)
 ```
 
 Copy into target repos: `pnpm install-artifacts -- --target /path/to/project --bundle devprofile --include-personal` → [docs/artifacts/README.md](docs/artifacts/README.md).

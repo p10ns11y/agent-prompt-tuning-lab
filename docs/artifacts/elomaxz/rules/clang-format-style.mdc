@@ -1,0 +1,17 @@
+---
+description: Apply .clang-format LLVM settings consistently before committing C changes
+globs: "**/*.{c,h},.clang-format"
+alwaysApply: false
+---
+
+# Clang format (LLVM)
+
+elomaxz sessions edit `.clang-format` then **Glob → Read → Shell → Write → StrReplace** across C sources.
+
+When changing ColumnLimit, IndentWidth, or AllowShortFunctionsOnASingleLine:
+
+1. **Read** existing `.clang-format` and one representative `.c` file.
+2. Apply format (clang-format or documented project command) — **Shell** must succeed.
+3. Fix layout regressions (split function parameters) by reading full function context — do not truncate identifiers for ColumnLimit.
+
+Commit formatting separately from logic when the diff would be noisy.

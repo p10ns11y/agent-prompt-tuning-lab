@@ -1,0 +1,18 @@
+---
+description: Investigate extension runtime failures with Read, Shell, and network tools
+globs: "**/*.{js,ts,html,json}"
+alwaysApply: false
+---
+
+# Debug extension runtime
+
+Corpus pattern for failures (timeouts, promise didn’t resolve): **Read → Shell → Grep → WebFetch/WebSearch**.
+
+When user reports runtime errors:
+
+1. **Read** the cited file and line (content script, background, service worker).
+2. **Grep** error string and related API usage across the extension.
+3. Reproduce or inspect via **Shell** (build, test harness) when possible.
+4. For network/timeouts, check manifest permissions and host permissions before blaming application logic.
+
+Fix minimally; reload instructions belong in README when behavior changes.

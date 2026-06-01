@@ -1,0 +1,19 @@
+---
+description: Prefer ApplyPatch then Shell and ReadLints for multi-hunk edits
+globs: "**/*.{js,ts,tsx,jsx,css,json}"
+alwaysApply: false
+---
+
+# ApplyPatch loop
+
+This repo’s corpus top chain: **ApplyPatch → Shell → ReadLints** (25+ turns).
+
+For non-trivial edits across hunks or files:
+
+1. Prefer **ApplyPatch** when the diff is structured; use StrReplace for single-site edits.
+2. **Shell** — run the project’s check script (test, lint, build) immediately after the patch lands.
+3. **ReadLints** on every touched file before responding.
+
+For design-token / CSS / React surface work, **Read** the token source and one consumer before patching — grep `--*` variables and component imports first.
+
+Do not stack multiple patch rounds without an intermediate Shell or ReadLints when the user reported visual or runtime bugs.

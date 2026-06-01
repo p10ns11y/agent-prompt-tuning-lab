@@ -1,0 +1,18 @@
+---
+description: Migrate deprecated Zod APIs with grep-first call-site fixes
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Zod API migration
+
+adaptate sessions show **Grep → Read → StrReplace → Shell** loops for deprecated `z.*` helpers (e.g. `z.iso.datetime()`).
+
+When cleaning deprecated Zod usage:
+
+1. **Grep** the deprecated symbol across packages — fix all call sites, not one file.
+2. **Read** zod v4 migration notes if v3 patterns remain (`usesV4Checks`, dual paths).
+3. Remove compatibility shims only when **turbo run check-types** and tests pass.
+4. Do not leave commented "messy" dual-path checks — one canonical API per concern.
+
+After schema changes, run **turbo run check-types** for `@adaptate/core` and affected packages.

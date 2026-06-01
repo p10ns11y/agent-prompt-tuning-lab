@@ -1,0 +1,18 @@
+---
+description: Grep all references before renaming packages or extension folders
+globs: "**/manifest.json,**/package.json,**/*.{js,ts,html,md}"
+alwaysApply: false
+---
+
+# Rename checklist
+
+Rename turns (grok-bridge → ask-grok, vocab-study → vocab-builder) use **Grep → Read → Shell → Write → StrReplace** across the monorepo.
+
+Before any rename or package move:
+
+1. **Grep** old name in manifests, package.json `name` fields, import paths, README, and CI.
+2. Update **manifest.json** per extension — validate JSON after each change.
+3. Update root and package READMEs in the same pass.
+4. **Shell** — load extension or run build/test if available.
+
+Do not leave stale folder names in docs or `externally_connectable` blocks.

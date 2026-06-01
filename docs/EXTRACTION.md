@@ -32,6 +32,17 @@ Repeated 3+ times in pool/eval?
                   No  → RULE (short procedure)
 ```
 
+### Corpus-backed patterns (install from [artifacts/](./artifacts/README.md))
+
+| Pattern | Artifact | Evidence |
+|---------|----------|----------|
+| Read → Grep before edit | `personal/grep-before-edit` | 107 Read→Grep pairs |
+| ApplyPatch → Shell → ReadLints | `personal/apply-patch-verify`, `thepulimaangani/apply-patch-loop` | Top 4-tool chain |
+| Explicit commit only | `personal/commit-when-asked` | commit intent in 20+ turns/repo |
+| Subagent explore + Return | `personal/subagent-delegation`, `*/explore-*` | 7 subagent turns |
+| "proceed" mid-plan | `thepulimaangani/proceed-incrementally` | 20–60 tool turns |
+| pnpm/turbo verify | `devprofile/pnpm-verify`, `adaptate/turbo-verify` | security/test sessions |
+
 | Artifact | Where | When |
 |----------|-------|------|
 | Cross-repo constraint | `~/.cursor/rules/` | verify-before-done, read-edit-lint |

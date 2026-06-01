@@ -15,3 +15,7 @@ data/splits/**
 
 # Local session catalog (paths to gitignored raw data)
 data/manifest.jsonl
+
+# LLM artifact drafts (local review before commit)
+data/artifact-drafts/**
+!data/artifact-drafts/.gitkeep

@@ -12,13 +12,18 @@ See also: [WORKFLOW.md](./WORKFLOW.md), [artifacts/README.md](./artifacts/README
 | **pool** | Yes — **discover** patterns | Mine tool sequences and intent clusters |
 | **eval** | Yes — **validate** and exemplify | Gold sessions, held-out check, few-shot |
 
-Run `pnpm split` after normalize. Refresh patterns with `pnpm insights`.
+Run `pnpm split` after normalize. Refresh patterns with `pnpm insights`, then draft new artifacts with Phase 4:
 
 ```bash
 pnpm insights                          # all eval + pool
 pnpm insights -- --split pool          # discovery only
 pnpm insights -- --repo devprofile     # one project
+
+pnpm suggest-artifacts -- --bundle devprofile --split pool   # LLM drafts (review locally)
+pnpm suggest-artifacts -- --bundle devprofile --apply        # promote new files only
 ```
+
+Phase 4 reads `eval` + `pool` turns locally (never committed), builds stats + sanitized user summaries, then calls **Grok** or **Cursor SDK**, or writes `PROMPT.md` for Cursor IDE Agent chat. Local Ollama is opt-in only. See [PIPELINE.md](./PIPELINE.md#4-suggest-artifacts-phase-4).
 
 ## Rule vs skill vs doc
 

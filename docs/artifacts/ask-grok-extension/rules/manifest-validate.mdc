@@ -1,0 +1,18 @@
+---
+description: Validate Chrome extension manifest fields after edits
+globs: "**/manifest.json,**/manifest*.json"
+alwaysApply: false
+---
+
+# Extension manifest validate
+
+ask-grok-extension history includes manifest errors (e.g. `externally_connectable` missing `matches`/`ids`).
+
+After editing `manifest.json`:
+
+1. Read the full manifest — check required keys for MV3 extensions.
+2. If using `externally_connectable`, ensure `matches` or `ids` is set.
+3. Load-path docs: update README with Brave/Chrome dev-mode steps when structure changes.
+4. For monorepo splits, verify each extension's manifest independently.
+
+Run or describe extension reload steps; do not claim fixed without checking manifest JSON validity.

@@ -21,7 +21,10 @@ pnpm harvest:all          # host + devcontainer unpack
 pnpm seed-manifest        # index data/raw → manifest
 pnpm normalize            # default --source host (dedup-safe)
 pnpm split                # eval / pool / discard by session
+pnpm insights             # tool patterns from splits (no transcript text)
 ```
+
+Copy ready-made rules/skills into dev repos: [docs/artifacts/README.md](docs/artifacts/README.md).
 
 See [WORKFLOW.md](docs/WORKFLOW.md) for weekly cadence and applying lessons to other repos.
 See [PIPELINE.md](docs/PIPELINE.md) for selective harvest and env vars.
@@ -92,6 +95,8 @@ agent-prompt-tuning-lab/
 ## Docs
 
 - [WORKFLOW.md](docs/WORKFLOW.md) — operating guide: cadence, lesson extraction, applying rules/skills elsewhere
+- [EXTRACTION.md](docs/EXTRACTION.md) — rule/skill extraction loop; `pnpm insights`
+- [artifacts/README.md](docs/artifacts/README.md) — copy-paste rules & skills per project
 - [PIPELINE.md](docs/PIPELINE.md) — harvest → normalize → split
 - [SCHEMA.md](docs/SCHEMA.md) — manifest and turn fields
 - [INSIGHTS.md](docs/INSIGHTS.md) — corpus statistics (no transcript text)

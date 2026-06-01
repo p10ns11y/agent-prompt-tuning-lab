@@ -1,0 +1,16 @@
+---
+description: Harden pnpm-workspace with install verification
+globs: pnpm-workspace.yaml,.npmrc
+alwaysApply: false
+---
+
+# pnpm workspace harden
+
+When user asks to harden `pnpm-workspace.yaml`:
+
+1. Read workspace package list — prefer explicit packages over wildcards when securing.
+2. Enable supply-chain settings appropriate to pnpm 11 (trustPolicy, minimumReleaseAge, strictDepBuilds) — verify names in docs.
+3. Run `pnpm install` after edits; failures block "done."
+4. Note trade-offs (mirrors missing `time` metadata, pmOnFail vs corepack).
+
+Registry auth stays in `.npmrc`, not workspace yaml.

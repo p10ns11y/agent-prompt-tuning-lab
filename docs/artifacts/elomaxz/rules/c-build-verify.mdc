@@ -1,0 +1,17 @@
+---
+description: After C source or build file changes, run build
+globs: "**/*.{c,h}",Makefile,CMakeLists.txt
+alwaysApply: false
+---
+
+# C build verify (elomaxz)
+
+Sessions show Read → StrReplace → Shell around LLVM-style C and docs cleanup.
+
+After editing `.c`/`.h` or build files:
+
+1. Run the project build command before done.
+2. For `.clang-format` / ColumnLimit changes, read affected functions before reformatting.
+3. Doc-only moves (md → images/, README logo): still verify links and paths after Shell listing.
+
+Commit requests: stage only intended files; do not bundle unrelated clutter moves.

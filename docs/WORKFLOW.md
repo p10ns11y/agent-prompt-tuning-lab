@@ -174,4 +174,9 @@ They contribute back: script fixes, aggregate INSIGHTS updates, gold **UUIDs** (
 | **Value?** | Measurable patterns + tagged exemplars + eval/pool splits |
 | **Apply elsewhere?** | Rules/skills in target repos; transcripts stay local |
 
-**Next step:** pick one gold session, read its turns locally, write **one rule** in a target dev repo, and use it on the next similar task. That is the loop this repo is built for.
+**Next step:** copy artifacts from [artifacts/README.md](./artifacts/README.md) into a target repo, or follow [EXTRACTION.md](./EXTRACTION.md) to distill new ones from gold sessions.
+
+```bash
+pnpm insights -- --repo devprofile   # confirm tool patterns before copying artifacts
+cp docs/artifacts/devprofile/rules/*.mdc ~/Work/personal/devprofile/.cursor/rules/
+```

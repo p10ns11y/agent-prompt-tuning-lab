@@ -1,0 +1,17 @@
+---
+description: After StrReplace-heavy edits, run ReadLints and a shell check
+globs: "**/*.{js,ts,tsx,svelte,json}"
+alwaysApply: false
+---
+
+# Lint after edit
+
+Gold sessions in this repo show high **ReadLints + Shell** use after **StrReplace** bursts.
+
+After multi-file edits:
+
+1. **ReadLints** on every touched file.
+2. Run the project's check script (test, typecheck, or lint script) via Shell when behavior could regress.
+3. For poem/variation or agent-branch work, verify the specific key/path the user cited before claiming fixed.
+
+Do not end with only a narrative fix — run at least one automated check when tools are available.

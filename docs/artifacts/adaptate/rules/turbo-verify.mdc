@@ -1,0 +1,17 @@
+---
+description: After package or turbo config changes, run turbo check-types and tests
+globs: turbo.json,**/package.json,packages/**/*
+alwaysApply: false
+---
+
+# Turbo / monorepo verify
+
+adaptate sessions show **Shell** running `turbo run check-types` and test/coverage goals after package edits.
+
+After changing `turbo.json`, package scripts, or `@adaptate/core`:
+
+1. Run `turbo run check-types` (or project equivalent) for affected packages.
+2. Run tests when adding test scripts or changing zod/schemas — do not assume green without Shell output.
+3. For zod v4 migration work, grep deprecated APIs (`z.iso.*`) and fix call sites before claiming clean.
+
+Treat "100% coverage" requests as requiring actual test run output, not file edits alone.

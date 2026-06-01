@@ -7,22 +7,13 @@ import path from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
+import { CROSS_REPO_BUNDLE } from "./bundles.mjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.resolve(__dirname, "../..");
 export const SPLITS_ROOT = path.join(PROJECT_ROOT, "data", "splits");
 export const ARTIFACTS_ROOT = path.join(PROJECT_ROOT, "docs", "artifacts");
 export const GOLD_SESSIONS_MD = path.join(PROJECT_ROOT, "docs", "GOLD_SESSIONS.md");
-
-export const BUNDLES = [
-  "personal",
-  "devprofile",
-  "premflow",
-  "thepulimaangani",
-  "adaptate",
-  "ask-grok-extension",
-  "elomaxz",
-  "agent-prompt-tuning-lab",
-];
 
 const INTENT_PATTERNS = [
   ["implement/plan", /\b(implement|plan as specified|attached plan)\b/i],
@@ -237,11 +228,11 @@ function computeStats(turns) {
 }
 
 /**
- * @param {string} bundle - repo_hint bundle name (use "personal" for cross-repo)
+ * @param {string} bundle - repo_hint or `personal` for cross-repo
  * @param {{ split?: string }} opts
  */
 export async function buildArtifactContext(bundle, { split = "all" } = {}) {
-  const repoFilter = bundle === "personal" ? null : bundle;
+  const repoFilter = bundle === CROSS_REPO_BUNDLE ? null : bundle;
   const turns = await loadSplitTurns({ split, repo: repoFilter });
   if (turns.length === 0) {
     throw new Error(

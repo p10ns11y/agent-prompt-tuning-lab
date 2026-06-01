@@ -27,7 +27,7 @@ pnpm normalize
 
 ```bash
 pnpm harvest:host -- --all --unpack
-CURSOR_REPO_NAMES=devprofile,premflow pnpm harvest:host -- --unpack
+CURSOR_REPO_NAMES=my-app,other-repo pnpm harvest:host -- --unpack
 pnpm harvest:devcontainer -- --unpack
 ```
 

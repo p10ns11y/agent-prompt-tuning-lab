@@ -9,11 +9,12 @@ git clone <your-fork-url> agent-prompt-tuning-lab && cd agent-prompt-tuning-lab
 chmod +x scripts/*.sh scripts/*.mjs
 
 pnpm harvest:all && pnpm seed-manifest && pnpm normalize && pnpm split
-pnpm insights
-pnpm suggest-artifacts -- --bundle devprofile --llm prompt
+pnpm insights                                    # see repo_hint names in output
+pnpm suggest-artifacts -- --list                 # bundles from your splits
+pnpm suggest-artifacts -- --bundle <repo> --llm prompt
 ```
 
-Deploy artifacts: `pnpm install-artifacts -- --target /path/to/repo --bundle devprofile --include-personal`
+Deploy artifacts: `pnpm install-artifacts -- --list` then `--target /path/to/repo --bundle <repo> --include-personal`
 
 ## Documentation
 

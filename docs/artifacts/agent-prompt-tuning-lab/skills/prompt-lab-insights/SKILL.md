@@ -16,7 +16,7 @@ description: Run prompt-tuning-lab insights and extraction workflow. Use in agen
 ```bash
 pnpm insights
 pnpm insights -- --split pool
-pnpm insights -- --repo devprofile
+pnpm insights -- --repo <repo-hint>
 ```
 
 ## Interpretation

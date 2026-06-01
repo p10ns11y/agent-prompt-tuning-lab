@@ -3,12 +3,10 @@
  * Phase 4: LLM-assisted rule/skill drafting from split stats + sanitized exemplars.
  *
  * Usage:
- *   node scripts/suggest-artifacts.mjs --bundle devprofile
- *   node scripts/suggest-artifacts.mjs --bundle devprofile --llm grok
- *   node scripts/suggest-artifacts.mjs --bundle devprofile --llm ollama
- *   node scripts/suggest-artifacts.mjs --bundle devprofile --llm prompt
- *   node scripts/suggest-artifacts.mjs --bundle devprofile --apply
- *   node scripts/suggest-artifacts.mjs --bundle devprofile --ingest data/artifact-drafts/.../response.json
+ *   node scripts/suggest-artifacts.mjs --list
+ *   node scripts/suggest-artifacts.mjs --bundle <repo> --llm prompt
+ *   node scripts/suggest-artifacts.mjs --bundle <repo> --llm grok --apply
+ *   node scripts/suggest-artifacts.mjs --bundle <repo> --ingest data/artifact-drafts/<repo>/<ts>/response.json
  */
 import { access, cp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -16,11 +14,16 @@ import { fileURLToPath } from "node:url";
 
 import {
   ARTIFACTS_ROOT,
-  BUNDLES,
   PROJECT_ROOT,
   buildArtifactContext,
   buildPromptMarkdown,
 } from "./lib/artifact-context.mjs";
+import {
+  assertSuggestBundle,
+  listArtifactBundles,
+  listRepoHintsFromSplits,
+  listSuggestBundles,
+} from "./lib/bundles.mjs";
 import {
   completeArtifacts,
   formatRuleFile,
@@ -41,6 +44,7 @@ function parseArgs(argv) {
     apply: false,
     ingest: null,
     dryRun: false,
+    list: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -50,30 +54,29 @@ function parseArgs(argv) {
     else if (a === "--ingest" && argv[i + 1]) out.ingest = argv[++i];
     else if (a === "--apply") out.apply = true;
     else if (a === "--dry-run") out.dryRun = true;
+    else if (a === "--list") out.list = true;
     else if (a === "--help" || a === "-h") {
       console.log(`Usage:
-  node scripts/suggest-artifacts.mjs --bundle <name> [--split pool|eval|all] [--llm auto|grok|cursor|prompt|ollama]
-  node scripts/suggest-artifacts.mjs --bundle <name> --apply
-  node scripts/suggest-artifacts.mjs --bundle <name> --ingest <response.json>
+  node scripts/suggest-artifacts.mjs --list
+  node scripts/suggest-artifacts.mjs --bundle <repo> [--split pool|eval|all] [--llm auto|grok|cursor|prompt|ollama]
+  node scripts/suggest-artifacts.mjs --bundle <repo> --apply
+  node scripts/suggest-artifacts.mjs --bundle <repo> --ingest <response.json>
 
-Bundles: ${BUNDLES.join(", ")}
+<repo> is a repo_hint from your splits (pnpm insights -- --repo <name>) or personal for cross-repo rules.
+Run --list after pnpm split to see valid names.
 
 Recommended providers (local Ollama is opt-in only — slow on unoptimized hardware):
   XAI_API_KEY, XAI_MODEL (default grok-build-0.1)
   CURSOR_API_KEY, CURSOR_MODEL, CURSOR_RUNTIME (cloud|local), CURSOR_CLOUD_REPO
   OLLAMA_HOST, OLLAMA_MODEL (not recommended — use --llm ollama explicitly)
 
-Outputs: data/artifact-drafts/<bundle>/<timestamp>/
+Outputs: data/artifact-drafts/<repo>/<timestamp>/
   context.json, PROMPT.md, response.json, rules/*.mdc, skills/*/SKILL.md`);
       process.exit(0);
     }
   }
-  if (!out.bundle) {
-    console.error("error: --bundle is required");
-    process.exit(1);
-  }
-  if (!BUNDLES.includes(out.bundle)) {
-    console.error(`error: unknown bundle ${JSON.stringify(out.bundle)}`);
+  if (!out.list && !out.bundle) {
+    console.error("error: --bundle <repo> is required (or --list)");
     process.exit(1);
   }
   if (!["pool", "eval", "all"].includes(out.split)) {
@@ -95,6 +98,28 @@ async function exists(p) {
     return true;
   } catch {
     return false;
+  }
+}
+
+async function printBundleList() {
+  const fromSplits = await listRepoHintsFromSplits();
+  const fromArtifacts = await listArtifactBundles();
+  const all = await listSuggestBundles();
+
+  console.log("Suggest bundles (--bundle <name>):");
+  if (!all.length) {
+    console.log("  (none — run pnpm normalize && pnpm split first)");
+    return;
+  }
+  for (const name of all) console.log(`  ${name}`);
+
+  if (fromSplits.length) {
+    console.log("\nFrom local splits (repo_hint):");
+    for (const h of fromSplits) console.log(`  ${h}`);
+  }
+  if (fromArtifacts.length) {
+    console.log("\nFrom docs/artifacts/ (existing templates):");
+    for (const b of fromArtifacts) console.log(`  ${b}`);
   }
 }
 
@@ -181,7 +206,14 @@ async function applyDrafts(bundle, draftDir, dryRun) {
 }
 
 async function main() {
-  const { bundle, split, llm, apply, ingest, dryRun } = parseArgs(process.argv.slice(2));
+  const { bundle, split, llm, apply, ingest, dryRun, list } = parseArgs(process.argv.slice(2));
+
+  if (list) {
+    await printBundleList();
+    return;
+  }
+
+  await assertSuggestBundle(bundle);
 
   const context = await buildArtifactContext(bundle, { split });
   const outDir = path.join(DRAFTS_ROOT, bundle, timestampDir());

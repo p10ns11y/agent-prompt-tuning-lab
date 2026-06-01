@@ -31,7 +31,7 @@ pnpm harvest:host -- --all --unpack
 pnpm harvest:devcontainer -- --unpack
 
 # Filter by repo name fragment
-CURSOR_REPO_NAMES=devprofile,premflow pnpm harvest:host -- --unpack
+CURSOR_REPO_NAMES=my-app,other-repo pnpm harvest:host -- --unpack
 ```
 
 Environment:
@@ -76,7 +76,7 @@ Rules: strip skill bodies, group by user turn, path → `{REPO_ROOT}`, skip `[RE
 
 ```bash
 pnpm tag-manifest -- --tag gold --session-id <uuid>
-pnpm tag-manifest -- --tag gold --repo devprofile --limit 5
+pnpm tag-manifest -- --tag gold --repo <repo-hint> --limit 5
 ```
 
 See [GOLD_SESSIONS.md](./GOLD_SESSIONS.md) for committable gold session ids.
@@ -125,6 +125,23 @@ Turn rows add `split` and `repo_hint`. See [SCHEMA.md](./SCHEMA.md).
 
 **Note:** Cursor exports do not record Composer vs auto model selection. Splits are by session, tags, and repo — not by model.
 
+## Bundles and repo hints
+
+A **bundle** is usually the `repo_hint` parsed from your Cursor workspace slug (see `pnpm insights`). It names:
+
+- turns filtered in `pnpm suggest-artifacts -- --bundle <repo>`
+- a folder under `docs/artifacts/<repo>/` when you commit templates
+
+Discover names after split:
+
+```bash
+pnpm insights                          # by_repo counts
+pnpm suggest-artifacts -- --list       # repo_hints + artifact folders
+pnpm install-artifacts -- --list       # committed artifact folders only
+```
+
+Use `personal` for cross-repo rules (not tied to one project).
+
 ## 4. Suggest artifacts (Phase 4)
 
 LLM-assisted drafting from split stats and sanitized exemplars — **no full transcripts in prompts or git**.
@@ -141,27 +158,28 @@ LLM-assisted drafting from split stats and sanitized exemplars — **no full tra
 `--llm auto` tries **Grok → Cursor SDK → prompt-only**. Local Ollama is excluded from auto.
 
 ```bash
-pnpm suggest-artifacts -- --bundle devprofile              # auto: Grok → Cursor → prompt
-pnpm suggest-artifacts -- --bundle devprofile --llm grok   # xAI grok-build-0.1
-pnpm suggest-artifacts -- --bundle devprofile --llm cursor # Cursor SDK (cloud default)
-pnpm suggest-artifacts -- --bundle devprofile --split pool
-pnpm suggest-artifacts -- --bundle devprofile --apply      # copy new drafts → docs/artifacts/
+pnpm suggest-artifacts -- --list
+pnpm suggest-artifacts -- --bundle <repo>              # auto: Grok → Cursor → prompt
+pnpm suggest-artifacts -- --bundle <repo> --llm grok   # xAI grok-build-0.1
+pnpm suggest-artifacts -- --bundle <repo> --llm cursor # Cursor SDK (cloud default)
+pnpm suggest-artifacts -- --bundle <repo> --split pool
+pnpm suggest-artifacts -- --bundle <repo> --apply      # copy new drafts → docs/artifacts/
 ```
 
 Cursor SDK (cloud — default):
 
 ```bash
 export CURSOR_API_KEY=...
-export CURSOR_CLOUD_REPO=https://github.com/you/agent-prompt-tuning-lab.git
-pnpm suggest-artifacts -- --bundle devprofile --llm cursor
+export CURSOR_CLOUD_REPO=https://github.com/you/your-repo.git
+pnpm suggest-artifacts -- --bundle <repo> --llm cursor
 ```
 
 Manual IDE path (no API key):
 
 ```bash
-pnpm suggest-artifacts -- --bundle devprofile --llm prompt
+pnpm suggest-artifacts -- --bundle <repo> --llm prompt
 # Paste PROMPT.md into Cursor Agent chat; save JSON as response.json
-pnpm suggest-artifacts -- --bundle devprofile --ingest data/artifact-drafts/devprofile/<ts>/response.json --apply
+pnpm suggest-artifacts -- --bundle <repo> --ingest data/artifact-drafts/<repo>/<ts>/response.json --apply
 ```
 
 Outputs (gitignored): `data/artifact-drafts/<bundle>/<timestamp>/`

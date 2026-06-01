@@ -25,7 +25,7 @@ pnpm split                # eval / pool / discard by session
 pnpm insights             # tool patterns from splits (no transcript text)
 ```
 
-Copy ready-made rules/skills into dev repos: [docs/artifacts/README.md](docs/artifacts/README.md).
+Copy into target repos: `pnpm install-artifacts -- --target /path/to/project --bundle devprofile --include-personal` → [docs/artifacts/README.md](docs/artifacts/README.md).
 
 See [WORKFLOW.md](docs/WORKFLOW.md) for weekly cadence and applying lessons to other repos.
 See [PIPELINE.md](docs/PIPELINE.md) for selective harvest and env vars.
@@ -85,6 +85,7 @@ agent-prompt-tuning-lab/
   scripts/split.mjs           # eval / pool / discard by session
   scripts/seed-manifest.mjs
   scripts/tag-manifest.mjs
+  scripts/install-artifacts.mjs # copy artifacts → <target>/.agents/
   .cursor/skills/             # harvest workflow skill
   .cursor/rules/              # privacy + normalize conventions
   docs/PIPELINE.md

@@ -7,19 +7,38 @@ Regenerate stats: `pnpm insights -- --repo <name>`.
 ## Install
 
 ```bash
-LAB=/path/to/agent-prompt-tuning-lab
-TARGET_REPO=/path/to/your-project   # e.g. devprofile, premflow
+# Into target repo .agents/ (recommended)
+pnpm install-artifacts -- --target /path/to/your-project --bundle devprofile --include-personal
 
-mkdir -p "$TARGET_REPO/.cursor/rules" "$TARGET_REPO/.cursor/skills"
-cp "$LAB/docs/artifacts/devprofile/rules/"*.mdc "$TARGET_REPO/.cursor/rules/"
-cp -r "$LAB/docs/artifacts/devprofile/skills/"* "$TARGET_REPO/.cursor/skills/" 2>/dev/null || true
+# List bundles
+pnpm install-artifacts -- --list
+
+# Dry run
+pnpm install-artifacts -- --target /path/to/your-project --bundle premflow --include-personal --dry-run
 ```
 
-Personal (all repos):
+Layout written:
+
+```text
+<target>/.agents/rules/*.mdc
+<target>/.agents/skills/<skill-name>/SKILL.md
+```
+
+Manual copy (same sources):
 
 ```bash
-cp "$LAB/docs/artifacts/personal/rules/"*.mdc ~/.cursor/rules/
-cp -r "$LAB/docs/artifacts/personal/skills/"* ~/.cursor/skills/ 2>/dev/null || true
+LAB=/path/to/agent-prompt-tuning-lab
+TARGET_REPO=/path/to/your-project
+
+mkdir -p "$TARGET_REPO/.agents/rules" "$TARGET_REPO/.agents/skills"
+cp "$LAB/docs/artifacts/devprofile/rules/"*.mdc "$TARGET_REPO/.agents/rules/"
+cp -r "$LAB/docs/artifacts/devprofile/skills/"* "$TARGET_REPO/.agents/skills/" 2>/dev/null || true
+```
+
+Personal only (global `.agents` under home — optional):
+
+```bash
+pnpm install-artifacts -- --target ~ --bundle personal
 ```
 
 ## Index

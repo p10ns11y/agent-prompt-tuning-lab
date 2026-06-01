@@ -26,9 +26,9 @@ pnpm insights -- --repo devprofile     # one project
 Repeated 3+ times in pool/eval?
   No  → skip or one-line doc
   Yes → Constraint (always/never)?
-          Yes → RULE  (.cursor/rules/*.mdc)
+          Yes → RULE  (`<target>/.agents/rules/*.mdc`)
           No  → Multi-step workflow?
-                  Yes → SKILL (.cursor/skills/*/SKILL.md)
+                  Yes → SKILL (`<target>/.agents/skills/*/SKILL.md`)
                   No  → RULE (short procedure)
 ```
 
@@ -45,9 +45,9 @@ Repeated 3+ times in pool/eval?
 
 | Artifact | Where | When |
 |----------|-------|------|
-| Cross-repo constraint | `~/.cursor/rules/` | verify-before-done, read-edit-lint |
-| Project constraint | `target-repo/.cursor/rules/` | stack-specific (pnpm, CMake, manifest.json) |
-| Project workflow | `target-repo/.cursor/skills/` | explore-and-return, supply-chain hardening |
+| Cross-repo constraint | `~/.agents/rules/` or install `--target ~ --bundle personal` | verify-before-done, read-edit-lint |
+| Project constraint | `<target>/.agents/rules/` | stack-specific (pnpm, CMake, manifest.json) |
+| Project workflow | `<target>/.agents/skills/` | explore-and-return, supply-chain hardening |
 | Lab-only | this repo `.cursor/` | harvest, privacy, normalize |
 
 ## Per-session worksheet
@@ -66,19 +66,26 @@ Repeated 3+ times in pool/eval?
 ## Install artifacts in a target repo
 
 ```bash
-# From repo root (after cd /path/to/agent-prompt-tuning-lab)
-TARGET_REPO=/path/to/your-project
-mkdir -p "$TARGET_REPO/.cursor/rules" "$TARGET_REPO/.cursor/skills"
-
-cp docs/artifacts/devprofile/rules/*.mdc "$TARGET_REPO/.cursor/rules/"
-cp -r docs/artifacts/devprofile/skills/* "$TARGET_REPO/.cursor/skills/" 2>/dev/null || true
+pnpm install-artifacts -- --target /path/to/your-project --bundle devprofile --include-personal
 ```
 
-Personal (all projects):
+Writes `rules/` and `skills/` under `<target>/.agents/`. See [artifacts/README.md](./artifacts/README.md).
+
+Manual from repo root:
 
 ```bash
-mkdir -p ~/.cursor/rules
-cp docs/artifacts/personal/rules/*.mdc ~/.cursor/rules/
+# From repo root (after cd /path/to/agent-prompt-tuning-lab)
+TARGET_REPO=/path/to/your-project
+mkdir -p "$TARGET_REPO/.agents/rules" "$TARGET_REPO/.agents/skills"
+
+cp docs/artifacts/devprofile/rules/*.mdc "$TARGET_REPO/.agents/rules/"
+cp -r docs/artifacts/devprofile/skills/* "$TARGET_REPO/.agents/skills/" 2>/dev/null || true
+```
+
+Personal (global `.agents` at home):
+
+```bash
+pnpm install-artifacts -- --target ~ --bundle personal
 ```
 
 ## Monthly cadence

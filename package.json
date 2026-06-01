@@ -15,6 +15,7 @@
     "split": "node scripts/split.mjs",
     "insights": "node scripts/insights.mjs",
     "seed-manifest": "node scripts/seed-manifest.mjs",
-    "tag-manifest": "node scripts/tag-manifest.mjs"
+    "tag-manifest": "node scripts/tag-manifest.mjs",
+    "install-artifacts": "node scripts/install-artifacts.mjs"
   }
 }

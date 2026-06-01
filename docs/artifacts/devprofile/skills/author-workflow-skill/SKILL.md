@@ -18,7 +18,7 @@ User requests: "Add a SKILL.md for …", "create a skill to …", or describes a
    - **When to use** — bullet triggers
    - **Steps** — ordered, tool-friendly (Read, Grep, Shell)
    - **Done when** — verifiable exit criteria
-4. **Write** under `.cursor/skills/<name>/SKILL.md` or project convention path.
+4. **Write** under `.agents/skills/<name>/SKILL.md` (or project convention path).
 5. Optionally add a **routing rule** (`.mdc`) telling the agent when to suggest attaching the skill.
 
 ## Do not

@@ -9,7 +9,7 @@ Cursor already logs how you work — tools, skills, subagents, failures. Without
 - See patterns (dominant tools, when skills help, what gets dropped)
 - Pick **gold sessions** as few-shot or eval examples
 - Export clean eval and pattern-mining splits (`pnpm split`)
-- **Port lessons** into `.cursor/rules` and skills in other repos
+- **Port lessons** into `<target>/.agents/rules` and skills in other repos (`pnpm install-artifacts`)
 
 The value is **closing the loop**: real sessions → structured turns → tagged exemplars → better prompts elsewhere.
 
@@ -102,7 +102,7 @@ Do **not** copy transcripts into other repos. Distill procedure and constraints 
 Short constraints that showed up in good turns. Copy verbatim into the target repo:
 
 ```text
-target-repo/.cursor/rules/
+target-repo/.agents/rules/
   verify-before-done.mdc     # run install/test/lint before claiming fixed
   minimal-diff.mdc           # Read → StrReplace → ReadLints loop
   explore-return-format.mdc  # subagent-style tasks: tree + flow + pain points
@@ -139,8 +139,8 @@ For each gold session (or after a session you remember was good):
    - What tools ran in what order? (procedure)
    - What made it succeed vs rows in `dropped.jsonl`? (anti-pattern)
 4. **Write one artifact** in the **target repo**:
-   - Repeated procedure → **skill** (`.cursor/skills/…`)
-   - Repeated constraint → **rule** (`.cursor/rules/…`)
+   - Repeated procedure → **skill** (`<target>/.agents/skills/…`)
+   - Repeated constraint → **rule** (`<target>/.agents/rules/…`)
    - One-off repo fact → **docs**, not a skill
 5. **Validate** — on the next similar task in that repo, attach the new skill/rule and check whether the tool pattern matches gold sessions.
 
@@ -178,5 +178,5 @@ They contribute back: script fixes, aggregate INSIGHTS updates, gold **UUIDs** (
 
 ```bash
 pnpm insights -- --repo devprofile   # confirm tool patterns before copying artifacts
-cp docs/artifacts/devprofile/rules/*.mdc /path/to/your-project/.cursor/rules/
+pnpm install-artifacts -- --target /path/to/your-project --bundle devprofile --include-personal
 ```

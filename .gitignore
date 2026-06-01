@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+
+# Large / sensitive session data
+data/raw/**
+!data/raw/.gitkeep
+!data/raw/manual/.gitkeep
+
+data/backups/*.zip
+data/processed/**
+!data/processed/.gitkeep
+
+data/splits/**
+!data/splits/.gitkeep
+
+# Manifest may list paths to raw data; keep structure, ignore if you prefer local-only catalog
+# data/manifest.jsonl

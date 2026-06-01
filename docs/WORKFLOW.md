@@ -177,6 +177,7 @@ They contribute back: script fixes, aggregate INSIGHTS updates, gold **UUIDs** (
 **Next step:** copy artifacts from [artifacts/README.md](./artifacts/README.md) into a target repo, or follow [EXTRACTION.md](./EXTRACTION.md) to distill new ones from gold sessions.
 
 ```bash
-pnpm insights -- --repo devprofile   # confirm tool patterns before copying artifacts
-pnpm install-artifacts -- --target /path/to/your-project --bundle devprofile --include-personal
+pnpm insights -- --repo <repo-hint>   # confirm tool patterns before copying artifacts
+pnpm install-artifacts -- --list
+pnpm install-artifacts -- --target /path/to/your-project --bundle <repo-hint> --include-personal
 ```

@@ -20,7 +20,7 @@ function parseArgs(argv) {
     if (argv[i] === "--split" && argv[i + 1]) split = argv[++i];
     else if (argv[i] === "--repo" && argv[i + 1]) repo = argv[++i];
     else if (argv[i] === "--help" || argv[i] === "-h") {
-      console.log("Usage: node scripts/insights.mjs [--split eval|pool|all] [--repo devprofile]");
+      console.log("Usage: node scripts/insights.mjs [--split eval|pool|all] [--repo <repo-hint>]");
       process.exit(0);
     }
   }

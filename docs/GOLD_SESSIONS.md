@@ -2,13 +2,15 @@
 
 Committable reference for manually tagged exemplar sessions. No transcript content — ids and repo hints only.
 
+**Note:** The table below is an example from one maintainer's harvest. Replace with your own tagged sessions after `pnpm tag-manifest`.
+
 Tag locally:
 
 ```bash
 pnpm tag-manifest -- --tag gold --session-id <uuid>
 ```
 
-## Tagged sessions (devprofile, premflow, thepulimaangani)
+## Example tagged sessions (maintainer corpus)
 
 Heuristics: longer parent sessions, multi-tool threads, skills present where available, plus high-value subagents under those repos.
 

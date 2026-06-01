@@ -15,12 +15,13 @@ See also: [WORKFLOW.md](./WORKFLOW.md), [artifacts/README.md](./artifacts/README
 Run `pnpm split` after normalize. Refresh patterns with `pnpm insights`, then draft new artifacts with Phase 4:
 
 ```bash
-pnpm insights                          # all eval + pool
+pnpm insights                          # all eval + pool — note by_repo keys
 pnpm insights -- --split pool          # discovery only
-pnpm insights -- --repo devprofile     # one project
+pnpm insights -- --repo <repo-hint>    # one project
 
-pnpm suggest-artifacts -- --bundle devprofile --split pool   # LLM drafts (review locally)
-pnpm suggest-artifacts -- --bundle devprofile --apply        # promote new files only
+pnpm suggest-artifacts -- --list
+pnpm suggest-artifacts -- --bundle <repo-hint> --split pool   # LLM drafts (review locally)
+pnpm suggest-artifacts -- --bundle <repo-hint> --apply      # promote new files only
 ```
 
 Phase 4 reads `eval` + `pool` turns locally (never committed), builds stats + sanitized user summaries, then calls **Grok** or **Cursor SDK**, or writes `PROMPT.md` for Cursor IDE Agent chat. Local Ollama is opt-in only. See [PIPELINE.md](./PIPELINE.md#4-suggest-artifacts-phase-4).
@@ -37,16 +38,18 @@ Repeated 3+ times in pool/eval?
                   No  → RULE (short procedure)
 ```
 
-### Corpus-backed patterns (install from [artifacts/](./artifacts/README.md))
+### Example patterns (from one maintainer corpus — yours will differ)
 
-| Pattern | Artifact | Evidence |
-|---------|----------|----------|
-| Read → Grep before edit | `personal/grep-before-edit` | 107 Read→Grep pairs |
-| ApplyPatch → Shell → ReadLints | `personal/apply-patch-verify`, `thepulimaangani/apply-patch-loop` | Top 4-tool chain |
-| Explicit commit only | `personal/commit-when-asked` | commit intent in 20+ turns/repo |
-| Subagent explore + Return | `personal/subagent-delegation`, `*/explore-*` | 7 subagent turns |
-| "proceed" mid-plan | `thepulimaangani/proceed-incrementally` | 20–60 tool turns |
-| pnpm/turbo verify | `devprofile/pnpm-verify`, `adaptate/turbo-verify` | security/test sessions |
+See [artifacts/README.md](./artifacts/README.md) for folders in this checkout. After `pnpm insights`, map your top tool sequences to new rules/skills under `docs/artifacts/<repo-hint>/`.
+
+| Pattern | Typical artifact shape | What to look for in insights |
+|---------|------------------------|--------------------------------|
+| Read → Grep before edit | cross-repo rule | High Read→Grep pair count |
+| ApplyPatch → Shell → ReadLints | rule + verify skill | Top 4-tool sequences |
+| Explicit commit only | cross-repo rule | commit intent cluster |
+| Subagent explore + Return | skill + routing rule | subagent_turns > 0 |
+| "proceed" mid-plan | incremental skill | high tool_call_count + proceed intent |
+| Stack verify (pnpm/turbo/cmake) | project rule | Shell + stack-specific commands |
 
 | Artifact | Where | When |
 |----------|-------|------|
@@ -71,7 +74,8 @@ Repeated 3+ times in pool/eval?
 ## Install artifacts in a target repo
 
 ```bash
-pnpm install-artifacts -- --target /path/to/your-project --bundle devprofile --include-personal
+pnpm install-artifacts -- --list
+pnpm install-artifacts -- --target /path/to/your-project --bundle <repo-hint> --include-personal
 ```
 
 Writes `rules/` and `skills/` under `<target>/.agents/`. See [artifacts/README.md](./artifacts/README.md).
@@ -83,8 +87,8 @@ Manual from repo root:
 TARGET_REPO=/path/to/your-project
 mkdir -p "$TARGET_REPO/.agents/rules" "$TARGET_REPO/.agents/skills"
 
-cp docs/artifacts/devprofile/rules/*.mdc "$TARGET_REPO/.agents/rules/"
-cp -r docs/artifacts/devprofile/skills/* "$TARGET_REPO/.agents/skills/" 2>/dev/null || true
+cp docs/artifacts/<repo-hint>/rules/*.mdc "$TARGET_REPO/.agents/rules/"
+cp -r docs/artifacts/<repo-hint>/skills/* "$TARGET_REPO/.agents/skills/" 2>/dev/null || true
 ```
 
 Personal (global `.agents` at home):
@@ -98,7 +102,7 @@ pnpm install-artifacts -- --target ~ --bundle personal
 1. `pnpm harvest:all && pnpm normalize && pnpm split`
 2. `pnpm insights -- --split pool` — note new top tool sequences
 3. Tag 1–3 new gold sessions → re-split
-4. Copy or update **one** rule per active repo from [artifacts/](./artifacts/README.md)
+4. Copy or update **one** rule per active repo (see `pnpm install-artifacts -- --list`)
 5. Optional: append aggregate counts to [INSIGHTS.md](./INSIGHTS.md) (no quotes)
 
 ## Pitfalls

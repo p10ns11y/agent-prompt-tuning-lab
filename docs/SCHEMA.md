@@ -12,7 +12,7 @@ One JSON object per session file (append-only catalog).
 | `session_id` | string | UUID from filename or folder name |
 | `parent_session_id` | string? | Parent session folder when `raw_path` contains `…/<parent>/subagents/<id>.jsonl` |
 | `source` | string | `manual` \| `host` \| `devcontainer` |
-| `repo_hint` | string? | Repo name parsed from workspace slug (e.g. `devprofile` from `…Work-personal-devprofile`) |
+| `repo_hint` | string? | Repo name parsed from workspace slug (e.g. `my-app` from `…Work-personal-my-app`) |
 | `workspace_slug` | string? | Cursor project folder under `~/.cursor/projects` |
 | `harvest_date` | string? | UTC date folder from harvest (`YYYYMMDD`) |
 | `collected_at` | string | ISO-8601 UTC |

@@ -1,6 +1,8 @@
 # Corpus insights
 
-Aggregate statistics from a local harvest (2026-06-01). No transcript text or PII — counts and distributions only.
+Aggregate statistics from a local harvest. No transcript text or PII — counts and distributions only.
+
+**Note:** Numbers below are a snapshot from one checkout. Run `pnpm insights` on your machine after split; repo names come from your `repo_hint` values, not a fixed list.
 
 ## Scale
 
@@ -48,7 +50,7 @@ With `--source all` (host preferred over devcontainer): same ~675 turns, ~33 dup
 | adaptate-packages-core | 2 |
 | ask-grok-extension | 2 |
 
-Target repos for gold tagging: **devprofile**, **premflow**, **thepulimaangani** (see [GOLD_SESSIONS.md](./GOLD_SESSIONS.md)).
+Target repos for gold tagging: whichever `repo_hint` values dominate your eval/pool splits (see [GOLD_SESSIONS.md](./GOLD_SESSIONS.md) for an example list).
 
 ## Turns and tools (processed, pre-dedup baseline)
 

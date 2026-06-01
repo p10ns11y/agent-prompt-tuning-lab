@@ -11,6 +11,8 @@ Toolkit for building prompt-tuning datasets from your own Cursor history — not
 - Aggregate patterns (`pnpm insights`) and draft rules/skills (`pnpm suggest-artifacts`)
 - Install distilled artifacts into target repos (`pnpm install-artifacts` → `<target>/.agents/`)
 
+**Bundles** are your `repo_hint` values (from workspace slugs), not a fixed list. After split: `pnpm suggest-artifacts -- --list` or `pnpm insights`.
+
 ## Repo layout
 
 ```text
@@ -50,7 +52,7 @@ data/manifest.jsonl         # local catalog
 
 ```bash
 pnpm harvest:host -- --all --unpack
-CURSOR_REPO_NAMES=devprofile,premflow pnpm harvest:host -- --unpack
+CURSOR_REPO_NAMES=my-app,other-repo pnpm harvest:host -- --unpack
 pnpm harvest:devcontainer -- --unpack
 ```
 
@@ -67,7 +69,7 @@ Tag exemplars locally, then record ids in [GOLD_SESSIONS.md](./GOLD_SESSIONS.md)
 
 ```bash
 pnpm tag-manifest -- --tag gold --session-id <uuid>
-pnpm tag-manifest -- --tag gold --repo devprofile --limit 5
+pnpm tag-manifest -- --tag gold --repo <repo-hint> --limit 5
 ```
 
 ## Roadmap

@@ -4,7 +4,7 @@
  *
  * Usage:
  *   node scripts/tag-manifest.mjs --tag gold --session-id <uuid>
- *   node scripts/tag-manifest.mjs --tag gold --repo devprofile --limit 5
+ *   node scripts/tag-manifest.mjs --tag gold --repo <repo-hint> --limit 5
  *   node scripts/tag-manifest.mjs --tag gold --session-id a,b,c
  */
 import { readFile, writeFile } from "node:fs/promises";

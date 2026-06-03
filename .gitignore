@@ -1,21 +1,39 @@
-node_modules/
-.DS_Store
+# Inverted / whitelist gitignore: ignore everything, then un-ignore what ships.
+# https://git-scm.com/docs/gitignore — negation rules; parent dirs must be un-ignored
+# so git can descend (e.g. !.cursor/ then !.cursor/rules/**).
 
-# Large / sensitive session data
-data/raw/**
-!data/raw/.gitkeep
-!data/raw/manual/.gitkeep
+*
 
-data/backups/*.zip
-data/processed/**
-!data/processed/.gitkeep
+# --- Root ---
+!.gitignore
+!/README.md
+!/CONTRIBUTING.md
+!/package.json
 
-data/splits/**
-!data/splits/.gitkeep
+# --- Scripts ---
+!/scripts/
+!/scripts/**
 
-# Local session catalog (paths to gitignored raw data)
-data/manifest.jsonl
+# --- Docs + artifact templates ---
+!/docs/
+!/docs/**
 
-# LLM artifact drafts (local review before commit)
-data/artifact-drafts/**
-!data/artifact-drafts/.gitkeep
+# --- Cursor project config ---
+!/.cursor/
+!/.cursor/**
+
+# --- data/: only scaffolding (manifest, raw, splits, drafts, zips stay ignored) ---
+!/data/
+!/data/bundle-targets.example.json
+!/data/backups/
+!/data/backups/README.md
+!/data/raw/
+!/data/raw/.gitkeep
+!/data/raw/manual/
+!/data/raw/manual/.gitkeep
+!/data/processed/
+!/data/processed/.gitkeep
+!/data/splits/
+!/data/splits/.gitkeep
+!/data/artifact-drafts/
+!/data/artifact-drafts/.gitkeep

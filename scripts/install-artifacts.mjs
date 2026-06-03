@@ -3,10 +3,10 @@
  * Copy docs/artifacts rules/skills into a target repo's .agents/ folder.
  *
  * Usage:
+ *   node scripts/install-artifacts.mjs --bundle <repo> [--include-personal]
  *   node scripts/install-artifacts.mjs --target /path/to/repo --bundle <repo>
- *   node scripts/install-artifacts.mjs --target /path/to/repo --bundle <repo> --include-personal
- *   node scripts/install-artifacts.mjs --target /path/to/repo --bundle all
- *   node scripts/install-artifacts.mjs --target /path/to/repo --list
+ *   node scripts/install-artifacts.mjs --list
+ *   node scripts/install-artifacts.mjs --list-targets
  */
 import { cp, mkdir, readdir, stat } from "node:fs/promises";
 import path from "node:path";
@@ -14,9 +14,12 @@ import { fileURLToPath } from "node:url";
 
 import {
   ARTIFACTS_ROOT,
+  BUNDLE_TARGETS_EXAMPLE,
   CROSS_REPO_BUNDLE,
   assertInstallBundle,
   listArtifactBundles,
+  listBundleTargetRows,
+  resolveBundleTarget,
   sortBundlesForInstall,
 } from "./lib/bundles.mjs";
 
@@ -30,6 +33,7 @@ function parseArgs(argv) {
     includePersonal: false,
     dryRun: false,
     list: false,
+    listTargets: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -39,13 +43,15 @@ function parseArgs(argv) {
     } else if (a === "--include-personal") out.includePersonal = true;
     else if (a === "--dry-run") out.dryRun = true;
     else if (a === "--list") out.list = true;
+    else if (a === "--list-targets") out.listTargets = true;
     else if (a === "--help" || a === "-h") {
       console.log(`Usage:
-  node scripts/install-artifacts.mjs --target <repo-path> --bundle <name>[,<name>...]
-  node scripts/install-artifacts.mjs --target <repo-path> --bundle <repo> --include-personal
+  node scripts/install-artifacts.mjs --bundle <repo> [--include-personal]
+  node scripts/install-artifacts.mjs --target <repo-path> --bundle <repo> [--include-personal]
   node scripts/install-artifacts.mjs --list
+  node scripts/install-artifacts.mjs --list-targets
 
-Bundle names match folders under docs/artifacts/ (use --list). "all" installs every bundle.
+Without --target, paths come from data/bundle-targets.json (see data/bundle-targets.example.json).
 
 Install layout:
   <target>/.agents/rules/*.mdc
@@ -69,11 +75,9 @@ async function resolveBundles(requested, includePersonal) {
   const names = new Set();
   if (!requested.length && !includePersonal) return null;
 
-  const available = await listArtifactBundles();
-
   for (const raw of requested) {
     if (raw === "all") {
-      for (const b of available) names.add(b);
+      for (const b of await listArtifactBundles()) names.add(b);
     } else {
       try {
         await assertInstallBundle(raw);
@@ -88,6 +92,17 @@ async function resolveBundles(requested, includePersonal) {
   if (includePersonal) names.add(CROSS_REPO_BUNDLE);
 
   return sortBundlesForInstall(names);
+}
+
+async function resolveTarget({ target, bundles, includePersonal }) {
+  if (target) return path.resolve(target);
+
+  const primary = bundles?.find((b) => b !== CROSS_REPO_BUNDLE);
+  if (!primary) {
+    if (includePersonal) return resolveBundleTarget(CROSS_REPO_BUNDLE, { required: true });
+    throw new Error("error: pass --target or --bundle <repo> (with entry in data/bundle-targets.json)");
+  }
+  return resolveBundleTarget(primary, { required: true });
 }
 
 async function copyFile(src, dest, dryRun) {
@@ -141,7 +156,7 @@ async function installBundle(bundle, agentRoot, dryRun) {
 }
 
 async function main() {
-  const { target, bundles: requested, includePersonal, dryRun, list } = parseArgs(
+  const { target, bundles: requested, includePersonal, dryRun, list, listTargets } = parseArgs(
     process.argv.slice(2),
   );
 
@@ -153,9 +168,19 @@ async function main() {
     return;
   }
 
-  if (!target) {
-    console.error("error: --target is required");
-    process.exit(1);
+  if (listTargets) {
+    const rows = await listBundleTargetRows();
+    console.log("Bundle → project path (data/bundle-targets.json):");
+    let any = false;
+    for (const { bundle, path: p } of rows) {
+      if (!p) continue;
+      any = true;
+      console.log(`  ${bundle} → ${p}`);
+    }
+    if (!any) {
+      console.log(`  (empty — cp ${path.relative(PROJECT_ROOT, BUNDLE_TARGETS_EXAMPLE)} data/bundle-targets.json)`);
+    }
+    return;
   }
 
   const bundles = await resolveBundles(requested, includePersonal);
@@ -164,7 +189,7 @@ async function main() {
     process.exit(1);
   }
 
-  const targetRoot = path.resolve(target);
+  const targetRoot = await resolveTarget({ target, bundles, includePersonal });
   if (!dryRun && !(await exists(targetRoot))) {
     console.error(`error: target not found: ${targetRoot}`);
     process.exit(1);
@@ -192,6 +217,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error(err.message ?? err);
   process.exit(1);
 });

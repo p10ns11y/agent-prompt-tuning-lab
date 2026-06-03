@@ -3,7 +3,7 @@
  * No hardcoded project list — each checkout reflects your harvest + artifact dirs.
  */
 import { createReadStream } from "node:fs";
-import { access, readdir } from "node:fs/promises";
+import { access, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
@@ -12,8 +12,60 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.resolve(__dirname, "../..");
 export const ARTIFACTS_ROOT = path.join(PROJECT_ROOT, "docs", "artifacts");
 export const SPLITS_ROOT = path.join(PROJECT_ROOT, "data", "splits");
+export const BUNDLE_TARGETS_FILE = path.join(PROJECT_ROOT, "data", "bundle-targets.json");
+export const BUNDLE_TARGETS_EXAMPLE = path.join(PROJECT_ROOT, "data", "bundle-targets.example.json");
 
 export const CROSS_REPO_BUNDLE = "personal";
+
+/** Local map: repo_hint → absolute or lab-relative project path. Gitignored. */
+export async function loadBundleTargets() {
+  try {
+    await access(BUNDLE_TARGETS_FILE);
+  } catch {
+    return {};
+  }
+  const raw = await readFile(BUNDLE_TARGETS_FILE, "utf8");
+  const data = JSON.parse(raw);
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("bundle-targets.json must be a JSON object { \"repo-hint\": \"path\" }");
+  }
+  const out = {};
+  for (const [bundle, p] of Object.entries(data)) {
+    if (typeof p !== "string" || !p.trim()) continue;
+    out[bundle] = path.isAbsolute(p) ? p : path.resolve(PROJECT_ROOT, p);
+  }
+  return out;
+}
+
+export async function resolveBundleTarget(bundle, { required = false } = {}) {
+  if (bundle === CROSS_REPO_BUNDLE) {
+    const home = process.env.HOME ?? process.env.USERPROFILE;
+    if (!home) {
+      if (required) throw new Error("cannot resolve ~ for personal bundle");
+      return null;
+    }
+    return path.join(home);
+  }
+  const targets = await loadBundleTargets();
+  const resolved = targets[bundle] ?? null;
+  if (required && !resolved) {
+    throw new Error(
+      `no path for bundle ${JSON.stringify(bundle)} in data/bundle-targets.json — copy data/bundle-targets.example.json and edit`,
+    );
+  }
+  return resolved;
+}
+
+export async function listBundleTargetRows() {
+  const targets = await loadBundleTargets();
+  const bundles = await listArtifactBundles();
+  const hints = await listRepoHintsFromSplits();
+  const names = [...new Set([...bundles, ...hints, ...Object.keys(targets)])].sort();
+  return names.map((name) => ({
+    bundle: name,
+    path: targets[name] ?? null,
+  }));
+}
 
 async function readJsonlRepoHints(filePath) {
   const hints = new Set();

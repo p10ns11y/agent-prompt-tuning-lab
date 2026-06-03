@@ -11,10 +11,11 @@ chmod +x scripts/*.sh scripts/*.mjs
 pnpm harvest:all && pnpm seed-manifest && pnpm normalize && pnpm split
 pnpm insights                                    # see repo_hint names in output
 pnpm suggest-artifacts -- --list                 # bundles from your splits
-pnpm suggest-artifacts -- --bundle <repo> --llm prompt
-```
+pnpm suggest-artifacts -- --bundle <repo> --llm prompt   # see docs/PROMPT_MODE.md
 
-Deploy artifacts: `pnpm install-artifacts -- --list` then `--target /path/to/repo --bundle <repo> --include-personal`
+cp data/bundle-targets.example.json data/bundle-targets.json   # map repos → local paths
+pnpm install-artifacts -- --bundle <repo> --include-personal
+```
 
 ## Documentation
 
@@ -24,7 +25,8 @@ Deploy artifacts: `pnpm install-artifacts -- --list` then `--target /path/to/rep
 | [Pipeline](docs/PIPELINE.md) | Harvest → normalize → split → suggest-artifacts |
 | [Workflow](docs/WORKFLOW.md) | Weekly cadence, porting lessons to other repos |
 | [Extraction](docs/EXTRACTION.md) | Rule vs skill, insights, artifact loop |
-| [Privacy](docs/PRIVACY.md) | Local vs committed data |
+| [Prompt mode](docs/PROMPT_MODE.md) | `--llm prompt` + ingest workflow |
+| [Bundle targets](docs/BUNDLE_TARGETS.md) | Map repos to local project paths |
 | [Artifacts](docs/artifacts/README.md) | Per-project rules and skills |
 | [Schema](docs/SCHEMA.md) | Manifest and turn fields |
 | [Gold sessions](docs/GOLD_SESSIONS.md) | Tagged exemplar session ids |

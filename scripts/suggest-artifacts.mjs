@@ -1,14 +1,8 @@
 #!/usr/bin/env node
 /**
  * Phase 4: LLM-assisted rule/skill drafting from split stats + sanitized exemplars.
- *
- * Usage:
- *   node scripts/suggest-artifacts.mjs --list
- *   node scripts/suggest-artifacts.mjs --bundle <repo> --llm prompt
- *   node scripts/suggest-artifacts.mjs --bundle <repo> --llm grok --apply
- *   node scripts/suggest-artifacts.mjs --bundle <repo> --ingest data/artifact-drafts/<repo>/<ts>/response.json
  */
-import { access, cp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,6 +37,9 @@ function parseArgs(argv) {
     llm: "auto",
     apply: false,
     ingest: null,
+    ingestOnly: false,
+    latestDraft: false,
+    draftDir: null,
     dryRun: false,
     list: false,
   };
@@ -51,32 +48,40 @@ function parseArgs(argv) {
     if ((a === "--bundle" || a === "--repo") && argv[i + 1]) out.bundle = argv[++i];
     else if (a === "--split" && argv[i + 1]) out.split = argv[++i];
     else if (a === "--llm" && argv[i + 1]) out.llm = argv[++i];
-    else if (a === "--ingest" && argv[i + 1]) out.ingest = argv[++i];
+    else if (a === "--ingest") {
+      out.ingestOnly = true;
+      const next = argv[i + 1];
+      if (next && !next.startsWith("-")) out.ingest = argv[++i];
+      else if (next === "--latest-draft") {
+        out.latestDraft = true;
+        i++;
+      }
+    } else if (a === "--latest-draft") out.latestDraft = true;
+    else if ((a === "--draft-dir" || a === "--draft") && argv[i + 1]) out.draftDir = argv[++i];
     else if (a === "--apply") out.apply = true;
     else if (a === "--dry-run") out.dryRun = true;
     else if (a === "--list") out.list = true;
     else if (a === "--help" || a === "-h") {
       console.log(`Usage:
   node scripts/suggest-artifacts.mjs --list
-  node scripts/suggest-artifacts.mjs --bundle <repo> [--split pool|eval|all] [--llm auto|grok|cursor|prompt|ollama]
-  node scripts/suggest-artifacts.mjs --bundle <repo> --apply
-  node scripts/suggest-artifacts.mjs --bundle <repo> --ingest <response.json>
+  node scripts/suggest-artifacts.mjs --bundle <repo> [--llm prompt|grok|cursor|auto]
+  node scripts/suggest-artifacts.mjs --bundle <repo> --ingest <draft-dir-or-response.json>
+  node scripts/suggest-artifacts.mjs --bundle <repo> --ingest --latest-draft [--apply]
 
-<repo> is a repo_hint from your splits (pnpm insights -- --repo <name>) or personal for cross-repo rules.
-Run --list after pnpm split to see valid names.
+--llm prompt   Writes context.json + PROMPT.md only. You or an IDE agent saves response.json, then --ingest.
+--ingest       Uses an existing draft folder (no new timestamp). Pass dir or response.json path.
+--latest-draft Newest data/artifact-drafts/<repo>/*/ with response.json
 
-Recommended providers (local Ollama is opt-in only — slow on unoptimized hardware):
-  XAI_API_KEY, XAI_MODEL (default grok-build-0.1)
-  CURSOR_API_KEY, CURSOR_MODEL, CURSOR_RUNTIME (cloud|local), CURSOR_CLOUD_REPO
-  OLLAMA_HOST, OLLAMA_MODEL (not recommended — use --llm ollama explicitly)
-
-Outputs: data/artifact-drafts/<repo>/<timestamp>/
-  context.json, PROMPT.md, response.json, rules/*.mdc, skills/*/SKILL.md`);
+See docs/PROMPT_MODE.md`);
       process.exit(0);
     }
   }
   if (!out.list && !out.bundle) {
     console.error("error: --bundle <repo> is required (or --list)");
+    process.exit(1);
+  }
+  if (out.ingestOnly && !out.ingest && !out.latestDraft && !out.draftDir) {
+    console.error("error: --ingest requires a path, --latest-draft, or --draft-dir");
     process.exit(1);
   }
   if (!["pool", "eval", "all"].includes(out.split)) {
@@ -101,6 +106,47 @@ async function exists(p) {
   }
 }
 
+async function isDirectory(p) {
+  try {
+    return (await stat(p)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+async function findLatestDraftDir(bundle) {
+  const bundleRoot = path.join(DRAFTS_ROOT, bundle);
+  if (!(await exists(bundleRoot))) return null;
+  const entries = await readdir(bundleRoot, { withFileTypes: true });
+  const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort().reverse();
+  for (const name of dirs) {
+    const dir = path.join(bundleRoot, name);
+    if (await exists(path.join(dir, "response.json"))) return dir;
+  }
+  return null;
+}
+
+async function resolveIngestPaths({ bundle, ingest, latestDraft, draftDir }) {
+  if (draftDir) {
+    const outDir = path.resolve(draftDir);
+    return { outDir, responsePath: path.join(outDir, "response.json") };
+  }
+  if (latestDraft) {
+    const outDir = await findLatestDraftDir(bundle);
+    if (!outDir) {
+      throw new Error(
+        `no draft with response.json under data/artifact-drafts/${bundle}/ — run --llm prompt and save response.json first`,
+      );
+    }
+    return { outDir, responsePath: path.join(outDir, "response.json") };
+  }
+  const resolved = path.resolve(ingest);
+  if (await isDirectory(resolved)) {
+    return { outDir: resolved, responsePath: path.join(resolved, "response.json") };
+  }
+  return { outDir: path.dirname(resolved), responsePath: resolved };
+}
+
 async function printBundleList() {
   const fromSplits = await listRepoHintsFromSplits();
   const fromArtifacts = await listArtifactBundles();
@@ -121,6 +167,7 @@ async function printBundleList() {
     console.log("\nFrom docs/artifacts/ (existing templates):");
     for (const b of fromArtifacts) console.log(`  ${b}`);
   }
+  console.log("\nPrompt mode: docs/PROMPT_MODE.md");
 }
 
 async function writeDraftFiles(outDir, { rules, skills }) {
@@ -206,7 +253,19 @@ async function applyDrafts(bundle, draftDir, dryRun) {
 }
 
 async function main() {
-  const { bundle, split, llm, apply, ingest, dryRun, list } = parseArgs(process.argv.slice(2));
+  const args = parseArgs(process.argv.slice(2));
+  const {
+    bundle,
+    split,
+    llm,
+    apply,
+    ingest,
+    ingestOnly,
+    latestDraft,
+    draftDir,
+    dryRun,
+    list,
+  } = args;
 
   if (list) {
     await printBundleList();
@@ -215,62 +274,80 @@ async function main() {
 
   await assertSuggestBundle(bundle);
 
+  if (ingestOnly) {
+    const { outDir, responsePath } = await resolveIngestPaths({
+      bundle,
+      ingest,
+      latestDraft,
+      draftDir,
+    });
+    if (!(await exists(responsePath))) {
+      const rel = path.relative(PROJECT_ROOT, outDir);
+      console.error(`error: missing ${path.relative(PROJECT_ROOT, responsePath)}`);
+      console.error(`\nPrompt mode workflow:`);
+      console.error(`  1. Open ${rel}/PROMPT.md (and context.json) in Cursor Agent`);
+      console.error(`  2. Ask for JSON only; save reply as response.json in that folder`);
+      console.error(`  3. pnpm suggest-artifacts -- --bundle ${bundle} --ingest ${rel}`);
+      console.error(`\nSee docs/PROMPT_MODE.md`);
+      process.exit(1);
+    }
+    const raw = await readFile(responsePath, "utf8");
+    const { rules, skills } = parseArtifactJson(raw);
+    const { ruleCount, skillCount } = await writeDraftFiles(outDir, { rules, skills });
+    console.log(`draft dir: ${path.relative(PROJECT_ROOT, outDir)}`);
+    console.log(`provider: ingest`);
+    console.log(`wrote ${ruleCount} rule(s), ${skillCount} skill(s)`);
+    if (apply) {
+      console.log(`\napply → docs/artifacts/${bundle}/ (no overwrite)`);
+      const { copiedRules, copiedSkills, skipped } = await applyDrafts(bundle, outDir, dryRun);
+      console.log(`applied ${copiedRules} rule(s), ${copiedSkills} skill(s); skipped ${skipped}`);
+    }
+    return;
+  }
+
   const context = await buildArtifactContext(bundle, { split });
   const outDir = path.join(DRAFTS_ROOT, bundle, timestampDir());
   await mkdir(outDir, { recursive: true });
 
   await writeFile(path.join(outDir, "context.json"), JSON.stringify(context, null, 2), "utf8");
-  const promptMd = buildPromptMarkdown(context);
-  await writeFile(path.join(outDir, "PROMPT.md"), promptMd, "utf8");
+  await writeFile(path.join(outDir, "PROMPT.md"), buildPromptMarkdown(context), "utf8");
 
-  let rules = [];
-  let skills = [];
-  let providerLabel = "none";
-
-  if (ingest) {
-    const raw = await readFile(path.resolve(ingest), "utf8");
-    ({ rules, skills } = parseArtifactJson(raw));
-    providerLabel = `ingest:${path.basename(ingest)}`;
-    await writeFile(path.join(outDir, "response.json"), raw, "utf8");
-  } else {
-    const provider = await resolveProvider(llm);
-    if (provider.kind === "prompt") {
-      const relDir = path.relative(PROJECT_ROOT, outDir);
-      console.log(`draft dir: ${relDir}`);
-      console.log(promptModeInstructions({
-        ingestPath: `${relDir}/response.json`,
-        bundle,
-        apply,
-      }));
-      return;
-    }
-
-    const userPrompt = [
-      "Generate artifact proposals as JSON matching the schema in the prompt.",
-      "",
-      JSON.stringify(context, null, 2),
-    ].join("\n");
-
-    console.log(`calling ${provider.kind}:${provider.model ?? ""}…`);
-    const { text, provider: used } = await completeArtifacts(provider, userPrompt);
-    providerLabel = used;
-    await writeFile(path.join(outDir, "response.json"), text, "utf8");
-    ({ rules, skills } = parseArtifactJson(text));
+  const provider = await resolveProvider(llm);
+  if (provider.kind === "prompt") {
+    const relDir = path.relative(PROJECT_ROOT, outDir);
+    console.log(`draft dir: ${relDir}`);
+    console.log(`\nNext: open ${relDir}/PROMPT.md in Cursor Agent (context.json has the same data).`);
+    console.log(`Save the model JSON reply as ${relDir}/response.json, then:`);
+    console.log(promptModeInstructions({
+      ingestPath: relDir,
+      bundle,
+      apply,
+    }));
+    console.log(`\nOr: pnpm suggest-artifacts -- --bundle ${bundle} --ingest ${relDir}`);
+    console.log(`Docs: docs/PROMPT_MODE.md`);
+    return;
   }
 
+  const userPrompt = [
+    "Generate artifact proposals as JSON matching the schema in the prompt.",
+    "",
+    JSON.stringify(context, null, 2),
+  ].join("\n");
+
+  console.log(`calling ${provider.kind}:${provider.model ?? ""}…`);
+  const { text, provider: used } = await completeArtifacts(provider, userPrompt);
+  await writeFile(path.join(outDir, "response.json"), text, "utf8");
+  const { rules, skills } = parseArtifactJson(text);
   const { ruleCount, skillCount } = await writeDraftFiles(outDir, { rules, skills });
 
   console.log(`draft dir: ${path.relative(PROJECT_ROOT, outDir)}`);
-  console.log(`provider: ${providerLabel}`);
+  console.log(`provider: ${used}`);
   console.log(`wrote ${ruleCount} rule(s), ${skillCount} skill(s)`);
 
   if (apply) {
     console.log(`\napply → docs/artifacts/${bundle}/ (no overwrite)`);
     const { copiedRules, copiedSkills, skipped } = await applyDrafts(bundle, outDir, dryRun);
     console.log(`applied ${copiedRules} rule(s), ${copiedSkills} skill(s); skipped ${skipped}`);
-  } else {
-    console.log("\nReview drafts, then:");
-    console.log(`  pnpm suggest-artifacts -- --bundle ${bundle} --ingest ${path.relative(PROJECT_ROOT, outDir)}/response.json --apply`);
   }
 }
 

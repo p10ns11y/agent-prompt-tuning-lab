@@ -174,7 +174,7 @@ export CURSOR_CLOUD_REPO=https://github.com/you/your-repo.git
 pnpm suggest-artifacts -- --bundle <repo> --llm cursor
 ```
 
-Manual IDE path (no API key):
+Manual IDE path (no API key): see [PROMPT_MODE.md](./PROMPT_MODE.md).
 
 ```bash
 pnpm suggest-artifacts -- --bundle <repo> --llm prompt

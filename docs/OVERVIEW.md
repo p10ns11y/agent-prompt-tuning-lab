@@ -30,7 +30,7 @@ agent-prompt-tuning-lab/
   .cursor/skills/           # harvest workflow skill
   .cursor/rules/            # privacy + normalize conventions
   docs/                     # pipeline, workflow, artifacts, schema
-  data/                     # gitignored except .gitkeep markers
+  data/                     # data/** ignored except .gitignore allowlist
 ```
 
 Raw unpack layout:

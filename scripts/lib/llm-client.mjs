@@ -247,14 +247,16 @@ ${content}
 }
 
 export function promptModeInstructions({ ingestPath, bundle, apply }) {
+  const ingestCmd = `pnpm suggest-artifacts -- --bundle ${bundle} --ingest ${ingestPath}${apply ? " --apply" : ""}`;
   return [
     "No API key configured. Recommended paths (fastest first):",
     "",
     "1. Grok — export XAI_API_KEY, rerun with --llm grok (grok-build-0.1)",
-    "2. Cursor IDE — paste PROMPT.md into Agent/Composer chat; save JSON as response.json",
+    "2. Cursor IDE / Agent — open PROMPT.md in this folder; save JSON as response.json",
     "3. Cursor SDK — CURSOR_API_KEY + npm install @cursor/sdk + --llm cursor",
-    "   (cloud default: CURSOR_CLOUD_REPO=<git-url>; usage billed per Cursor plan)",
     "",
-    `  pnpm suggest-artifacts -- --bundle ${bundle} --ingest ${ingestPath}${apply ? " --apply" : ""}`,
+    `  ${ingestCmd}`,
+    "",
+    "See docs/PROMPT_MODE.md",
   ].join("\n");
 }

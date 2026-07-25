@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Phase 2: Normalize Cursor agent JSONL → data/processed/turns.jsonl
- * Usage: node scripts/normalize.mjs [--source host|devcontainer|manual|all] [--force]
+ * Phase 2: Normalize agent JSONL → data/processed/turns.jsonl
+ * Accepts Cursor host/devcontainer/manual plus converted grok/kilo/cline harvests.
+ * Usage: node scripts/normalize.mjs [--source host|devcontainer|manual|grok|kilo|cline|all]
  */
 import { createReadStream, createWriteStream } from "node:fs";
 import { readFile, readdir, stat, writeFile } from "node:fs/promises";
@@ -15,7 +16,25 @@ const RAW_ROOT = path.join(PROJECT_ROOT, "data", "raw");
 const OUT_DIR = path.join(PROJECT_ROOT, "data", "processed");
 const SCHEMA_VERSION = 1;
 
-const SOURCE_RANK = { host: 3, manual: 2, devcontainer: 1, unknown: 0 };
+const SOURCE_RANK = {
+  host: 5,
+  grok: 4,
+  kilo: 3,
+  cline: 3,
+  manual: 2,
+  devcontainer: 1,
+  unknown: 0,
+};
+
+const VALID_SOURCES = [
+  "host",
+  "devcontainer",
+  "manual",
+  "grok",
+  "kilo",
+  "cline",
+  "all",
+];
 
 const REPO_ROOT_PATTERNS = [
   /\/workspaces\/[^/]+/g,
@@ -27,11 +46,13 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--source" && argv[i + 1]) source = argv[++i];
     else if (argv[i] === "--help" || argv[i] === "-h") {
-      console.log("Usage: node scripts/normalize.mjs [--source host|devcontainer|manual|all]");
+      console.log(
+        `Usage: node scripts/normalize.mjs [--source ${VALID_SOURCES.join("|")}]`,
+      );
       process.exit(0);
     }
   }
-  if (!["host", "devcontainer", "manual", "all"].includes(source)) {
+  if (!VALID_SOURCES.includes(source)) {
     console.error(`error: invalid --source ${source}`);
     process.exit(1);
   }
@@ -81,20 +102,14 @@ function isRedactedOnly(text) {
 function parseFileMeta(filePath) {
   const rel = path.relative(PROJECT_ROOT, filePath).split(path.sep).join("/");
   const parts = rel.split("/");
-  const source =
-    parts[2] === "manual"
-      ? "manual"
-      : parts[2] === "host"
-        ? "host"
-        : parts[2] === "devcontainer"
-          ? "devcontainer"
-          : "unknown";
+  const known = new Set(["manual", "host", "devcontainer", "grok", "kilo", "cline"]);
+  const source = known.has(parts[2]) ? parts[2] : "unknown";
   const sessionId = path.basename(filePath, ".jsonl");
   const subIdx = parts.indexOf("subagents");
   let parentSessionId = null;
   if (subIdx > 0) {
     parentSessionId = parts[subIdx - 1];
-    if (parentSessionId === "subagents" || parentSessionId.length < 36) {
+    if (parentSessionId === "subagents" || parentSessionId.length < 8) {
       parentSessionId = null;
     }
   }

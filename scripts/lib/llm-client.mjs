@@ -1,14 +1,14 @@
 /**
  * LLM providers for artifact drafting.
  *
- * Recommended (fast): xAI grok-build-0.1, Cursor agent (IDE or SDK).
+ * Recommended (fast): xAI grok-4 (override with XAI_MODEL), Cursor agent (IDE or SDK).
  * Not recommended: local Ollama (opt-in only — slow on unoptimized hardware).
  */
 import { PROJECT_ROOT } from "./artifact-context.mjs";
 
 const DEFAULT_OLLAMA = "http://127.0.0.1:11434";
 const DEFAULT_XAI = "https://api.x.ai/v1";
-export const DEFAULT_GROK_MODEL = "grok-build-0.1";
+export const DEFAULT_GROK_MODEL = "grok-4";
 export const DEFAULT_CURSOR_MODEL = "composer-2.5";
 
 export async function detectOllamaModel(baseUrl = process.env.OLLAMA_HOST ?? DEFAULT_OLLAMA) {
@@ -216,8 +216,14 @@ export function parseArtifactJson(raw) {
     throw new Error("LLM response is not JSON");
   }
   const parsed = JSON.parse(text.slice(start, end + 1));
-  const rules = Array.isArray(parsed.rules) ? parsed.rules : [];
-  const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
+  const rules = (Array.isArray(parsed.rules) ? parsed.rules : []).map((r) => ({
+    ...r,
+    body: r.body ?? r.content ?? "",
+  }));
+  const skills = (Array.isArray(parsed.skills) ? parsed.skills : []).map((s) => ({
+    ...s,
+    body: s.body ?? s.content ?? "",
+  }));
   return { rules, skills };
 }
 
@@ -251,7 +257,7 @@ export function promptModeInstructions({ ingestPath, bundle, apply }) {
   return [
     "No API key configured. Recommended paths (fastest first):",
     "",
-    "1. Grok — export XAI_API_KEY, rerun with --llm grok (grok-build-0.1)",
+    "1. Grok — export XAI_API_KEY, rerun with --llm grok (default grok-4; override XAI_MODEL)",
     "2. Cursor IDE / Agent — open PROMPT.md in this folder; save JSON as response.json",
     "3. Cursor SDK — CURSOR_API_KEY + npm install @cursor/sdk + --llm cursor",
     "",

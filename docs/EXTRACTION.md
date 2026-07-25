@@ -12,30 +12,34 @@ See also: [WORKFLOW.md](./WORKFLOW.md), [artifacts/README.md](./artifacts/README
 | **pool** | Yes — **discover** patterns | Mine tool sequences and intent clusters |
 | **eval** | Yes — **validate** and exemplify | Gold sessions, held-out check, few-shot |
 
-Run `pnpm split` after normalize. Refresh patterns with `pnpm insights`, then draft new artifacts with Phase 4:
+Run `pnpm split` after normalize. Prefer the **workflow-first distill** path:
 
 ```bash
-pnpm insights                          # all eval + pool — note by_repo keys
-pnpm insights -- --split pool          # discovery only
-pnpm insights -- --repo <repo-hint>    # one project
+pnpm distill-sessions -- --pilot --llm grok
+pnpm distill-workflows -- --run-dir data/distill/<run-id>   # see DISTILL.md
+pnpm install-distill -- --run-dir data/distill/<run-id> --list
+pnpm install-distill -- --run-dir data/distill/<run-id> --profile personal-skills
 
+# Secondary: histogram insights + legacy bundle drafts
+pnpm insights
 pnpm suggest-artifacts -- --list
-pnpm suggest-artifacts -- --bundle <repo-hint> --split pool   # LLM drafts (review locally)
-pnpm suggest-artifacts -- --bundle <repo-hint> --apply      # promote new files only
+pnpm suggest-artifacts -- --bundle <repo-hint> --split pool
 ```
 
-Phase 4 reads `eval` + `pool` turns locally (never committed), builds stats + sanitized user summaries, then calls **Grok** or **Cursor SDK**, or writes `PROMPT.md` for Cursor IDE Agent chat. Local Ollama is opt-in only. See [PIPELINE.md](./PIPELINE.md#4-suggest-artifacts-phase-4).
+**Distill** extracts from sanitized per-session narrative and aggregates with Rhai toward composable workflows. **insights** / **suggest-artifacts** are secondary (bundle stats + exemplars). See [DISTILL.md](./DISTILL.md) and [PIPELINE.md](./PIPELINE.md).
 
-## Rule vs skill vs doc
+## Rule vs skill vs workflow
 
 ```text
-Repeated 3+ times in pool/eval?
+Repeated / high-value in pool/eval?
   No  → skip or one-line doc
   Yes → Constraint (always/never)?
           Yes → RULE  (`<target>/.agents/rules/*.mdc`)
-          No  → Multi-step workflow?
-                  Yes → SKILL (`<target>/.agents/skills/*/SKILL.md`)
-                  No  → RULE (short procedure)
+          No  → Multi-step procedure chaining reusable pieces?
+                  Yes → WORKFLOW (preferred): drafts/workflows/*.md + Grok .rhai
+                        + composable SKILLs for each chain step
+                  No  → Isolated SKILL only if genuinely useful alone
+                        (avoid thin “read then edit” duplicates)
 ```
 
 ### Example patterns (from one maintainer corpus — yours will differ)
@@ -73,6 +77,17 @@ See [artifacts/README.md](./artifacts/README.md) for folders in this checkout. A
 
 ## Install artifacts in a target repo
 
+**From distill drafts (preferred):**
+
+```bash
+pnpm install-distill -- --run-dir data/distill/<run-id> --profile <repo-or-personal-skills>
+pnpm install-distill -- --latest-run --all
+```
+
+Writes workflows/skills/rules per [DISTILL.md](./DISTILL.md) install layouts (personal lib or `.agents/` + `.grok/workflows/`).
+
+**From committed `docs/artifacts/` (legacy):**
+
 ```bash
 pnpm install-artifacts -- --list
 pnpm install-artifacts -- --target /path/to/your-project --bundle <repo-hint> --include-personal
@@ -100,10 +115,10 @@ pnpm install-artifacts -- --target ~ --bundle personal
 ## Monthly cadence
 
 1. `pnpm harvest:all && pnpm normalize && pnpm split`
-2. `pnpm insights -- --split pool` — note new top tool sequences
-3. Tag 1–3 new gold sessions → re-split
-4. Copy or update **one** rule per active repo (see `pnpm install-artifacts -- --list`)
-5. Optional: append aggregate counts to [INSIGHTS.md](./INSIGHTS.md) (no quotes)
+2. `pnpm distill-sessions -- --pilot --llm grok` then `pnpm distill-workflows -- --latest-run`
+3. Review `data/distill/<run>/drafts/`, prune near-duplicates, `pnpm install-distill -- --latest-run --all`
+4. Tag 1–3 new gold sessions → re-split
+5. Optional: `pnpm insights -- --split pool` for histogram checks; append counts to [INSIGHTS.md](./INSIGHTS.md) (no quotes)
 
 ## Pitfalls
 

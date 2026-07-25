@@ -14,9 +14,24 @@
 !/scripts/
 !/scripts/**
 
+# --- Rhai distill scripts (orchestration; no transcript data) ---
+!/rhai/
+!/rhai/**
+
+# --- Thin Rhai host (source only; target/ stays ignored) ---
+!/tools/
+!/tools/rhai-host/
+!/tools/rhai-host/Cargo.toml
+!/tools/rhai-host/Cargo.lock
+!/tools/rhai-host/src/
+!/tools/rhai-host/src/**
+/tools/rhai-host/target/
+
 # --- Docs + artifact templates ---
 !/docs/
 !/docs/**
+# Host-specific discovery notes (keep local)
+/docs/**/*.local.md
 
 # --- Cursor project config ---
 !/.cursor/
@@ -37,3 +52,5 @@
 !/data/splits/.gitkeep
 !/data/artifact-drafts/
 !/data/artifact-drafts/.gitkeep
+# distill run outputs (session insights, aggregates, drafts) — local only
+/data/distill/

@@ -4,17 +4,24 @@ Templates distilled from local gold/pool sessions (tool patterns and intents —
 
 Bundle names match `repo_hint` from your harvest (see `pnpm insights`) or folder names under `docs/artifacts/`.
 
+Prefer the **distill** path for new work (`pnpm distill-sessions` → `distill-workflows` → `install-distill`). This folder holds **committed** templates from the legacy `suggest-artifacts --apply` loop.
+
 ## Discover bundles
 
 ```bash
 pnpm install-artifacts -- --list          # folders under docs/artifacts/
 pnpm suggest-artifacts -- --list          # repo_hints from splits + artifact folders
 pnpm insights                             # by_repo counts
+pnpm install-distill -- --latest-run --list   # curated distill install profiles
 ```
 
 ## Install
 
 ```bash
+# Preferred: distill drafts
+pnpm install-distill -- --run-dir data/distill/<run-id> --profile personal-skills
+
+# Legacy: committed docs/artifacts/
 pnpm install-artifacts -- --target /path/to/your-project --bundle <repo-hint> --include-personal
 pnpm install-artifacts -- --target /path/to/your-project --bundle <repo-hint> --dry-run
 ```
@@ -47,10 +54,11 @@ pnpm install-artifacts -- --target ~ --bundle personal
 ## Example index (this checkout)
 
 The folders below are **examples** from one maintainer corpus. After you harvest and run Phase 4, add your own under `docs/artifacts/<repo-hint>/`.
+Low-frequency ideas: [DEFERRED_SKILLS.md](../DEFERRED_SKILLS.md).
 
 | Bundle | Rules | Skills | Typical signal |
 |--------|-------|--------|----------------|
-| [personal](./personal/) | verify-before-done, read-edit-lint, grep-before-edit, … | subagent-delegation | cross-repo tool chains |
+| [personal](./personal/) | verify-before-done, read-edit-lint, grep-before-edit, read-before-shell, … | explore-then-edit, structured-repo-explore, portable-skill-author, subagent-delegation | cross-repo tool chains |
 | [devprofile](./devprofile/) | pnpm-verify, skill-routing, deps-research | supply-chain-harden, … | pnpm audit, WebSearch deps |
 | [premflow](./premflow/) | cmake-build-verify, plan-before-refactor | mvu-refactor-plan, … | CMake, subagent explore |
 | [thepulimaangani](./thepulimaangani/) | lint-after-edit, apply-patch-loop | proceed-incrementally, … | ApplyPatch bursts |

@@ -1,14 +1,15 @@
 /**
  * LLM providers for artifact drafting.
  *
- * Recommended (fast): xAI grok-build-0.1, Cursor agent (IDE or SDK).
- * Not recommended: local Ollama (opt-in only — slow on unoptimized hardware).
+ * Recommended (fast): xAI via `--llm grok` (model from XAI_MODEL; default subject to change),
+ * Cursor agent (IDE or SDK). Not recommended: local Ollama (opt-in only — slow on unoptimized hardware).
  */
 import { PROJECT_ROOT } from "./artifact-context.mjs";
 
 const DEFAULT_OLLAMA = "http://127.0.0.1:11434";
 const DEFAULT_XAI = "https://api.x.ai/v1";
-export const DEFAULT_GROK_MODEL = "grok-build-0.1";
+/** Current xAI default; override anytime with XAI_MODEL — slug may change as models ship. */
+export const DEFAULT_GROK_MODEL = "grok-4.5";
 export const DEFAULT_CURSOR_MODEL = "composer-2.5";
 
 export async function detectOllamaModel(baseUrl = process.env.OLLAMA_HOST ?? DEFAULT_OLLAMA) {
@@ -216,14 +217,25 @@ export function parseArtifactJson(raw) {
     throw new Error("LLM response is not JSON");
   }
   const parsed = JSON.parse(text.slice(start, end + 1));
-  const rules = Array.isArray(parsed.rules) ? parsed.rules : [];
-  const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
+  const rules = (Array.isArray(parsed.rules) ? parsed.rules : []).map((r) => ({
+    ...r,
+    body: r.body ?? r.content ?? "",
+  }));
+  const skills = (Array.isArray(parsed.skills) ? parsed.skills : []).map((s) => ({
+    ...s,
+    body: s.body ?? s.content ?? "",
+  }));
   return { rules, skills };
+}
+
+/** YAML double-quoted scalar — safe when values contain colons or quotes. */
+export function yamlDoubleQuoted(value) {
+  return JSON.stringify(String(value ?? "").replace(/\n/g, " ").trim());
 }
 
 export function formatRuleFile({ filename, description, alwaysApply, body }) {
   const apply = alwaysApply === false ? "false" : "true";
-  const desc = (description ?? filename.replace(/\.mdc$/, "")).replace(/\n/g, " ");
+  const desc = yamlDoubleQuoted(description ?? filename.replace(/\.mdc$/, ""));
   const content = (body ?? "").trim();
   return `---
 description: ${desc}
@@ -235,7 +247,7 @@ ${content}
 }
 
 export function formatSkillFile({ name, description, body }) {
-  const desc = (description ?? name).replace(/\n/g, " ");
+  const desc = yamlDoubleQuoted(description ?? name);
   const content = (body ?? "").trim();
   return `---
 name: ${name}
@@ -251,7 +263,7 @@ export function promptModeInstructions({ ingestPath, bundle, apply }) {
   return [
     "No API key configured. Recommended paths (fastest first):",
     "",
-    "1. Grok — export XAI_API_KEY, rerun with --llm grok (grok-build-0.1)",
+    "1. Grok — export XAI_API_KEY, rerun with --llm grok (model: XAI_MODEL, else current default)",
     "2. Cursor IDE / Agent — open PROMPT.md in this folder; save JSON as response.json",
     "3. Cursor SDK — CURSOR_API_KEY + npm install @cursor/sdk + --llm cursor",
     "",

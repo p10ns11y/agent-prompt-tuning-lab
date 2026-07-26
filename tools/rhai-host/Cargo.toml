@@ -1,0 +1,11 @@
+[package]
+name = "rhai-host"
+version = "0.1.0"
+edition = "2021"
+description = "Thin Rhai host for prompt-lab distill orchestration (score / aggregate / compose)"
+publish = false
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+rhai = { version = "1.21", features = ["serde"] }
+serde_json = "1"

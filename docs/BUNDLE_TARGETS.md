@@ -1,26 +1,45 @@
 # Bundle targets (local project paths)
 
-Map each **bundle** (`repo_hint`) to the real project directory on your machine. Used by `install-artifacts` so you can skip `--target`.
+Map each **bundle** / install-profile id to the real project directory on your machine. Used by `install-artifacts` and as overrides for `install-distill`.
+
+This file is **gitignored** — local layout stays off-repo. Committed code never assumes `~/Work/personal/…`.
+
+## Two layout kinds
+
+| Kind | How to write the path |
+|------|------------------------|
+| **In-tree sibling** (same parent as the lab) | Lab-relative: `../premflow`, `../skills` |
+| **Out-of-tree** (elsewhere on the machine) | Home-relative or absolute in *your* gitignored `bundle-targets.json` only — never in the committed example |
+
+Committed `distill-install-map.mjs` only ships sibling defaults. Anything outside that tree **must** be listed in your local `data/bundle-targets.json`, or install skips / hits the wrong folder.
 
 ## Setup
 
 ```bash
 cp data/bundle-targets.example.json data/bundle-targets.json
-# Edit paths — absolute or relative to the lab repo root
+# Edit paths for your machine (siblings and any out-of-tree overrides)
 ```
 
-Example `data/bundle-targets.json`:
+Example (`data/bundle-targets.example.json` — siblings only):
 
 ```json
 {
   "premflow": "../premflow",
-  "devprofile": "/home/you/Work/personal/devprofile"
+  "devprofile": "../devprofile",
+  "personal-skills": "../skills"
 }
 ```
 
-`personal` resolves to `$HOME` (global `.agents`).
+Out-of-tree overrides belong only in the gitignored copy, e.g. `"some-profile": "~/path/to/checkout"`.
 
-This file is **gitignored** — paths stay local.
+`personal` (cross-repo / global `.agents`) resolves to `$HOME`.
+
+Check resolution:
+
+```bash
+pnpm install-distill -- --list
+pnpm install-artifacts -- --list-targets
+```
 
 ## Install
 

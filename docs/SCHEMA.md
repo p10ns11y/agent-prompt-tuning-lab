@@ -11,7 +11,8 @@ One JSON object per session file (append-only catalog).
 | `schema_version` | number | Currently `1` |
 | `session_id` | string | UUID from filename or folder name |
 | `parent_session_id` | string? | Parent session folder when `raw_path` contains `…/<parent>/subagents/<id>.jsonl` |
-| `source` | string | `manual` \| `host` \| `devcontainer` |
+| `source` | string | `manual` \| `host` \| `devcontainer` \| `grok` \| `kilo` \| `cline` |
+| `agent` | string? | Sidecar hint (`grok` / `kilo` / `cline`) when harvested from non-Cursor agents |
 | `repo_hint` | string? | Repo name parsed from workspace slug (e.g. `my-app` from `…Work-personal-my-app`) |
 | `workspace_slug` | string? | Cursor project folder under `~/.cursor/projects` |
 | `harvest_date` | string? | UTC date folder from harvest (`YYYYMMDD`) |
@@ -80,3 +81,18 @@ One row per session after split assignment.
 ### splits/summary.json
 
 Aggregate counts only (no transcript text): sessions and turns by split, breakdown by `repo_hint` and `kind`, plus run config (`eval_tag`, `seed`, `eval_ratio`).
+
+## distill/ (Phase 4 — local only)
+
+Written by `pnpm distill-sessions` / `pnpm distill-workflows`. Entire tree is gitignored.
+
+| Path | Description |
+|------|-------------|
+| `packs/<session_id>.json` | Sanitized narrative excerpts + tool sequence |
+| `sessions/<session_id>.json` | Per-session LLM insight (`reusable_pieces`, `workflow_candidate`, `value_score`) |
+| `aggregate.json` | Rhai-scored workflows / skills / rules |
+| `drafts/workflows/*.{md,rhai}` | Portable plan + Grok Build template |
+| `drafts/skills/*/SKILL.md` | Composable skill drafts |
+| `drafts/rules/*.mdc` | Rule drafts |
+
+See [DISTILL.md](./DISTILL.md).

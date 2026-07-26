@@ -1,5 +1,5 @@
 ---
-description: Normalize with --source host by default to avoid duplicate session turns
+description: Normalize source selection for Cursor vs multi-agent harvests
 globs: scripts/normalize.mjs
 alwaysApply: false
 ---
@@ -8,8 +8,9 @@ alwaysApply: false
 
 When running or editing `scripts/normalize.mjs`:
 
-- Default `pnpm normalize` uses `--source host`.
-- Use `--source all` only when you need cross-source coverage; dedup always runs per `session_id` (prefers host, workspace-scoped paths, newer mtime).
-- Prefer `host` over `all` on duplicated host+devcontainer trees to avoid scanning duplicate trees.
+- Default `pnpm normalize` uses `--source all` (Cursor + Grok/Kilo/Cline).
+- Use `pnpm normalize:host` (`--source host`) when you only want Cursor host trees or to avoid scanning large agent harvests.
+- Dedup always runs per `session_id` (prefers host, then grok, workspace-scoped paths, newer mtime).
+- Prefer `host` over `all` on duplicated host+devcontainer trees if agents are not needed.
 
 Subagent files must pass through `parent_session_id` on each turn when `raw_path` contains `/subagents/`.

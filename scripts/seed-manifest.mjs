@@ -2,8 +2,8 @@
 /**
  * Index all *.jsonl under data/raw into data/manifest.jsonl (idempotent by raw_path + mtime).
  */
-import { createReadStream, createWriteStream } from "node:fs";
-import { appendFile, readdir, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { appendFile, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
@@ -13,6 +13,15 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const RAW_ROOT = path.join(PROJECT_ROOT, "data", "raw");
 const MANIFEST_PATH = path.join(PROJECT_ROOT, "data", "manifest.jsonl");
 const SCHEMA_VERSION = 1;
+
+const KNOWN_SOURCES = new Set([
+  "manual",
+  "host",
+  "devcontainer",
+  "grok",
+  "kilo",
+  "cline",
+]);
 
 async function loadExistingKeys() {
   const keys = new Set();
@@ -47,14 +56,7 @@ async function collectJsonlFiles(dir, base = dir, sourceHint = "") {
     } else if (ent.isFile() && ent.name.endsWith(".jsonl")) {
       const rel = path.relative(PROJECT_ROOT, full).split(path.sep).join("/");
       const parts = rel.split("/");
-      const source =
-        parts[2] === "manual"
-          ? "manual"
-          : parts[2] === "host"
-            ? "host"
-            : parts[2] === "devcontainer"
-              ? "devcontainer"
-              : sourceHint || "unknown";
+      const source = KNOWN_SOURCES.has(parts[2]) ? parts[2] : sourceHint || "unknown";
       const sessionId = path.basename(ent.name, ".jsonl");
       out.push({ full, rel, source, sessionId });
     }
@@ -93,8 +95,23 @@ function inferRepoHint(workspaceSlug) {
   if (personal) return personal[1];
   const workspace = workspaceSlug.match(/^workspaces-(.+)$/);
   if (workspace) return workspace[1];
+  // Grok slugify: home-…-Work-personal-<repo>
+  const grokPersonal = workspaceSlug.match(/Work-personal-([^/]+)$/i);
+  if (grokPersonal) return grokPersonal[1];
+  // kilo-code-oss-<repo> / cline-cursor-<repo>
+  const agentRepo = workspaceSlug.match(/^(?:kilo|cline)-[a-z0-9-]+-(.+)$/i);
+  if (agentRepo) return agentRepo[1];
   if (workspaceSlug.includes("devprofile")) return "devprofile";
   return undefined;
+}
+
+async function readSidecarMeta(jsonlPath) {
+  const metaPath = jsonlPath.replace(/\.jsonl$/, ".meta.json");
+  try {
+    return JSON.parse(await readFile(metaPath, "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 function parentSessionIdFromPath(rel) {
@@ -118,14 +135,16 @@ async function main() {
 
     const lineCount = await countLines(full);
     const { workspaceSlug, harvestDate } = parseRawPath(rel);
+    const sidecar = await readSidecarMeta(full);
 
-    const parentSessionId = parentSessionIdFromPath(rel);
+    const parentSessionId =
+      parentSessionIdFromPath(rel) || sidecar?.parent_session_id || undefined;
 
     const row = {
       schema_version: SCHEMA_VERSION,
       session_id: sessionId,
       source,
-      repo_hint: inferRepoHint(workspaceSlug),
+      repo_hint: sidecar?.repo_hint || inferRepoHint(workspaceSlug),
       harvest_date: harvestDate,
       workspace_slug: workspaceSlug,
       collected_at: new Date().toISOString(),
@@ -136,6 +155,7 @@ async function main() {
       tags: [],
     };
     if (parentSessionId) row.parent_session_id = parentSessionId;
+    if (sidecar?.agent) row.agent = sidecar.agent;
 
     await appendFile(MANIFEST_PATH, `${JSON.stringify(row)}\n`);
     existing.add(key);

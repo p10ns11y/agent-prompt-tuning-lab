@@ -179,7 +179,7 @@ LLM-assisted drafting from split stats and sanitized exemplars — **no full tra
 
 | Provider | When | Command / env |
 |----------|------|----------------|
-| **Grok** (best API) | Fast, cheap, JSON mode | `XAI_API_KEY` + `--llm grok` (default `grok-4`; override `XAI_MODEL`) |
+| **Grok** (best API) | Fast, cheap, JSON mode | `XAI_API_KEY` + `--llm grok` (model via `XAI_MODEL`; default subject to change) |
 | **Cursor IDE** | Paste prompt, no API script | `--llm prompt` → open `PROMPT.md` in Agent/Composer chat |
 | **Cursor SDK** | Automate from CI/script | `CURSOR_API_KEY` + `npm install @cursor/sdk` + `--llm cursor` |
 | Local Ollama | Opt-in only (slow here) | `--llm ollama` |
@@ -189,7 +189,7 @@ LLM-assisted drafting from split stats and sanitized exemplars — **no full tra
 ```bash
 pnpm suggest-artifacts -- --list
 pnpm suggest-artifacts -- --bundle <repo>              # auto: Grok → Cursor → prompt
-pnpm suggest-artifacts -- --bundle <repo> --llm grok   # xAI grok-4 (or XAI_MODEL)
+pnpm suggest-artifacts -- --bundle <repo> --llm grok   # xAI Grok (XAI_MODEL overrides default)
 pnpm suggest-artifacts -- --bundle <repo> --llm cursor # Cursor SDK (cloud default)
 pnpm suggest-artifacts -- --bundle <repo> --split pool
 pnpm suggest-artifacts -- --bundle <repo> --apply      # copy new drafts → docs/artifacts/
@@ -220,7 +220,7 @@ Outputs (gitignored): `data/artifact-drafts/<bundle>/<timestamp>/`
 | `response.json` | Raw LLM JSON |
 | `rules/*.mdc`, `skills/*/SKILL.md` | Formatted drafts for review |
 
-Env: `XAI_API_KEY`, `XAI_MODEL` (default `grok-4`); `CURSOR_API_KEY`, `CURSOR_MODEL`, `CURSOR_RUNTIME`, `CURSOR_CLOUD_REPO`. Local Ollama: opt-in via `--llm ollama` only.
+Env: `XAI_API_KEY`, `XAI_MODEL` (optional; when unset, uses the current code default — today `grok-4.5`, subject to change); `CURSOR_API_KEY`, `CURSOR_MODEL`, `CURSOR_RUNTIME`, `CURSOR_CLOUD_REPO`. Local Ollama: opt-in via `--llm ollama` only.
 
 Review before commit — `--apply` never overwrites existing files in `docs/artifacts/`.
 

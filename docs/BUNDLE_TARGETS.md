@@ -6,31 +6,31 @@ This file is **gitignored** — local layout stays off-repo. Committed code neve
 
 ## Two layout kinds
 
-| Kind | Example | How to write the path |
-|------|---------|------------------------|
-| **In-tree sibling** (under the same parent as the lab) | `premflow`, `skills` | Lab-relative: `../premflow`, `../skills` |
-| **Out-of-tree** (elsewhere on the machine) | `~/arch-machine`, `~/life-os` | Home-relative: `~/arch-machine`, `~/life-os` |
+| Kind | How to write the path |
+|------|------------------------|
+| **In-tree sibling** (same parent as the lab) | Lab-relative: `../premflow`, `../skills` |
+| **Out-of-tree** (elsewhere on the machine) | Home-relative or absolute in *your* gitignored `bundle-targets.json` only — never in the committed example |
 
-Committed `distill-install-map.mjs` only ships sibling defaults. Anything outside that tree **must** be listed here, or install skips / hits the wrong folder.
+Committed `distill-install-map.mjs` only ships sibling defaults. Anything outside that tree **must** be listed in your local `data/bundle-targets.json`, or install skips / hits the wrong folder.
 
 ## Setup
 
 ```bash
 cp data/bundle-targets.example.json data/bundle-targets.json
-# Edit paths for your machine
+# Edit paths for your machine (siblings and any out-of-tree overrides)
 ```
 
-Example:
+Example (`data/bundle-targets.example.json` — siblings only):
 
 ```json
 {
   "premflow": "../premflow",
   "devprofile": "../devprofile",
-  "personal-skills": "../skills",
-  "arch-machine": "~/arch-machine",
-  "life-os": "~/life-os"
+  "personal-skills": "../skills"
 }
 ```
+
+Out-of-tree overrides belong only in the gitignored copy, e.g. `"some-profile": "~/path/to/checkout"`.
 
 `personal` (cross-repo / global `.agents`) resolves to `$HOME`.
 

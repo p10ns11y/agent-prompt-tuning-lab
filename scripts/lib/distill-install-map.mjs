@@ -197,16 +197,16 @@ export const INSTALL_PROFILES = [
     id: "thepulimaangani",
     target: "../thepulimaangani",
     layout: "project-agents",
-    note: "Omit until domain-fitting workflows exist (portfolio/ghcards/archy dumps are wrong-repo)",
-    workflows: [],
+    note: "Tamil prosody / poem variations — poem-variations-constant-refactor + one-sample-per-type",
+    workflows: ["poem-variations-constant-refactor"],
     skills: [],
-    rules: [],
+    rules: ["one-sample-per-type.mdc"],
   },
   {
     id: "elomaxz",
     target: "../elomaxz",
     layout: "project-agents",
-    note: "C / Eagle+Satellite plane — omit poem-variations; groxy poll-loop lives on arch-machine",
+    note: "C / Eagle+Satellite plane — poem-variations lives on thepulimaangani; groxy poll-loop on arch-machine",
     workflows: [
       "eagle-satellite-architecture-delivery",
       "eagle-tea-control-plane",
@@ -216,7 +216,6 @@ export const INSTALL_PROFILES = [
     rules: [
       "read-before-c-format.mdc",
       "no-magic-numbers-in-c.mdc",
-      "one-sample-per-type.mdc",
     ],
   },
   {

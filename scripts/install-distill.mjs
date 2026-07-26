@@ -19,6 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { BUNDLE_TARGETS_FILE, loadBundleTargets } from "./lib/bundles.mjs";
 import { DISTILL_ROOT } from "./lib/session-distill.mjs";
 import { GLOBAL_SKIP, INSTALL_PROFILES } from "./lib/distill-install-map.mjs";
 
@@ -36,6 +37,33 @@ function resolveTarget(raw) {
   const expanded = expandHome(raw);
   if (path.isAbsolute(expanded)) return expanded;
   return path.resolve(PROJECT_ROOT, expanded);
+}
+
+/**
+ * Profile default target, overridden by gitignored data/bundle-targets.json
+ * when the same profile id (or alias) is present.
+ */
+async function resolveProfileTarget(profile) {
+  const overrides = await loadBundleTargets();
+  const fromConfig =
+    overrides[profile.id] ??
+    (profile.id === "personal-skills" ? overrides.skills : null);
+  if (fromConfig) return fromConfig;
+  return resolveTarget(profile.target);
+}
+
+/** Lab-relative drafts path for committed manifests (never absolute / ~/Work/…). */
+function portableSourceDrafts(draftsRoot) {
+  const rel = path.relative(PROJECT_ROOT, draftsRoot);
+  if (rel && !rel.startsWith("..") && !path.isAbsolute(rel)) {
+    return rel.split(path.sep).join("/");
+  }
+  const runId = path.basename(path.dirname(draftsRoot));
+  return `data/distill/${runId}/drafts`;
+}
+
+function distillRunId(draftsRoot) {
+  return path.basename(path.dirname(draftsRoot));
 }
 
 async function exists(p) {
@@ -169,7 +197,7 @@ function filterNames(names, kind, forceAll) {
 }
 
 async function installProfile(profile, draftsRoot, { dryRun, skipGrokHome, forceAll }) {
-  const target = resolveTarget(profile.target);
+  const target = await resolveProfileTarget(profile);
   if (!(await exists(target))) {
     console.warn(`\n[${profile.id}] skip: target missing ${target}`);
     return { skipped: true, workflows: 0, skills: 0, rules: 0 };
@@ -225,10 +253,11 @@ async function installProfile(profile, draftsRoot, { dryRun, skipGrokHome, force
     if (await copyFile(src, path.join(rulesDir, file), dryRun)) rCount++;
   }
 
-  // Manifest for review / PR description
+  // Manifest for review / PR description — portable provenance only (no machine paths)
   const manifest = {
     profile: profile.id,
-    source_drafts: draftsRoot,
+    distill_run: distillRunId(draftsRoot),
+    source_drafts: portableSourceDrafts(draftsRoot),
     installed_at: new Date().toISOString(),
     workflows,
     skills,
@@ -253,11 +282,14 @@ async function main() {
 
   if (args.list) {
     console.log("Install profiles (scripts/lib/distill-install-map.mjs):\n");
+    console.log(`  (optional overrides: ${path.relative(PROJECT_ROOT, BUNDLE_TARGETS_FILE)})\n`);
     for (const p of INSTALL_PROFILES) {
-      const t = resolveTarget(p.target);
+      const t = await resolveProfileTarget(p);
       const ok = await exists(t);
+      const defaultT = resolveTarget(p.target);
+      const overridden = t !== defaultT ? " [bundle-targets]" : "";
       console.log(
-        `  ${p.id.padEnd(28)} ${ok ? "ok" : "MISSING"}  ${t}\n` +
+        `  ${p.id.padEnd(28)} ${ok ? "ok" : "MISSING"}  ${t}${overridden}\n` +
           `    workflows=${(p.workflows || []).length} skills=${(p.skills || []).length} rules=${(p.rules || []).length}`,
       );
     }

@@ -19,6 +19,9 @@
  *   skills: todo-seed-from-goal (prefer goal-to-todo-seed),
  *     parse-plan-and-context (prefer cli-plan-context-split)
  *
+ * Targets are sibling-relative to the lab root (e.g. ../premflow, ../skills).
+ * Cross-repo installs belong here (or in gitignored data/bundle-targets.json
+ * overrides) — never bake ~/Work/… or absolute paths into consumer manifests.
  * Expand paths with expandHome(); relative targets resolve from lab root.
  */
 
@@ -73,7 +76,7 @@ export const GLOBAL_SKIP = {
 export const INSTALL_PROFILES = [
   {
     id: "personal-skills",
-    target: "~/Work/personal/skills",
+    target: "../skills",
     layout: "personal-skills",
     note: "Central library — cross-cutting skill lifecycle / process only (no lab, no desktop, no project dumps)",
     workflows: [
@@ -221,7 +224,7 @@ export const INSTALL_PROFILES = [
     id: "arch-machine",
     target: "../plugins/arch-machine",
     layout: "project-agents",
-    note: "Eagle/archy control-plane plugin — omit tmux/shell cockpit dumps",
+    note: "Eagle/archy control-plane plugin — omit tmux/shell cockpit dumps. Out-of-tree checkouts: set arch-machine in data/bundle-targets.json.",
     workflows: [
       "eagle-satellite-architecture-delivery",
       "eagle-tea-control-plane",

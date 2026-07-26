@@ -4,6 +4,7 @@
  */
 import { createReadStream } from "node:fs";
 import { access, readFile, readdir, stat } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
@@ -16,6 +17,13 @@ export const BUNDLE_TARGETS_FILE = path.join(PROJECT_ROOT, "data", "bundle-targe
 export const BUNDLE_TARGETS_EXAMPLE = path.join(PROJECT_ROOT, "data", "bundle-targets.example.json");
 
 export const CROSS_REPO_BUNDLE = "personal";
+
+function expandHome(p) {
+  if (!p) return p;
+  if (p === "~") return os.homedir();
+  if (p.startsWith("~/")) return path.join(os.homedir(), p.slice(2));
+  return p;
+}
 
 /** Local map: repo_hint → absolute or lab-relative project path. Gitignored. */
 export async function loadBundleTargets() {
@@ -32,7 +40,10 @@ export async function loadBundleTargets() {
   const out = {};
   for (const [bundle, p] of Object.entries(data)) {
     if (typeof p !== "string" || !p.trim()) continue;
-    out[bundle] = path.isAbsolute(p) ? p : path.resolve(PROJECT_ROOT, p);
+    const expanded = expandHome(p.trim());
+    out[bundle] = path.isAbsolute(expanded)
+      ? expanded
+      : path.resolve(PROJECT_ROOT, expanded);
   }
   return out;
 }

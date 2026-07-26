@@ -104,9 +104,11 @@ pnpm install-distill -- --latest-run --all --dry-run
 
 | Layout | Paths |
 |--------|--------|
-| **personal-skills** (`~/Work/personal/skills`) | `<skill>/SKILL.md`, `rules/*.mdc`, `workflows/*.{md,rhai}` |
+| **personal-skills** (`../skills` from lab root) | `<skill>/SKILL.md`, `rules/*.mdc`, `workflows/*.{md,rhai}` |
 | **project-agents** | `<repo>/.agents/{skills,rules,workflows}` + `<repo>/.grok/workflows/*.rhai` |
 | **Grok user workflows** | also copies `.rhai` → `~/.grok/workflows/` (disable with `--skip-grok-home`) |
+
+Install targets are sibling-relative in `distill-install-map.mjs` (override locally via `data/bundle-targets.json` if needed). Consumer `.distill-install.json` manifests store only a portable `distill_run` + lab-relative `source_drafts` — never machine paths like `~/Work/…`.
 
 Committed templates under `docs/artifacts/` still use legacy `pnpm install-artifacts`.
 
@@ -125,4 +127,4 @@ Committed templates under `docs/artifacts/` still use legacy `pnpm install-artif
 
 - Packs truncate + path-scrub (`{REPO_ROOT}`).
 - Insights and drafts stay under `data/distill/` (gitignored).
-- Committable artifacts only after human review → target `.agents/` / `.grok/workflows/` / `~/Work/personal/skills` (via `install-distill`), or optionally `docs/artifacts/`.
+- Committable artifacts only after human review → target `.agents/` / `.grok/workflows/` / skills library (`../skills` via `install-distill`), or optionally `docs/artifacts/`.

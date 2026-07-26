@@ -149,7 +149,7 @@ export const INSTALL_PROFILES = [
       "roadmap-write-and-link",
       "premflow-skill-pack",
     ],
-    rules: ["journal-ensure-nonblocking.mdc"],
+    rules: ["journal-ensure-nonblocking.mdc", "no-magic-numbers-in-c.mdc"],
   },
   {
     id: "collab-finder",
@@ -206,7 +206,7 @@ export const INSTALL_PROFILES = [
     id: "elomaxz",
     target: "../elomaxz",
     layout: "project-agents",
-    note: "C / Eagle+Satellite / remote-control plane — omit poem-variations (unrelated dump)",
+    note: "C / Eagle+Satellite plane — omit poem-variations; groxy poll-loop lives on arch-machine",
     workflows: [
       "eagle-satellite-architecture-delivery",
       "eagle-tea-control-plane",
@@ -216,7 +216,6 @@ export const INSTALL_PROFILES = [
     rules: [
       "read-before-c-format.mdc",
       "no-magic-numbers-in-c.mdc",
-      "poll-loop-resilience.mdc",
       "one-sample-per-type.mdc",
     ],
   },
@@ -230,7 +229,7 @@ export const INSTALL_PROFILES = [
       "eagle-tea-control-plane",
     ],
     skills: [],
-    rules: [],
+    rules: ["poll-loop-resilience.mdc"],
   },
   {
     id: "p10ns11y",

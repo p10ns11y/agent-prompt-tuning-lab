@@ -6,7 +6,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { formatRuleFile, formatSkillFile } from "./llm-client.mjs";
+import { formatRuleFile, formatSkillFile, yamlDoubleQuoted } from "./llm-client.mjs";
 
 function kebab(name) {
   return String(name || "unnamed")
@@ -26,7 +26,7 @@ export function formatWorkflowMarkdown(wf) {
   const lines = [
     `---`,
     `name: ${name}`,
-    `description: ${(wf.description || name).replace(/\n/g, " ")}`,
+    `description: ${yamlDoubleQuoted(wf.description || name)}`,
     `kind: workflow`,
     `skill_chain: [${chain.map((s) => JSON.stringify(s)).join(", ")}]`,
     `---`,
